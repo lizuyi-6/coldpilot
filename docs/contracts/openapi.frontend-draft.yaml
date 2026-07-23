@@ -1,0 +1,678 @@
+openapi: 3.1.0
+info:
+  title: 鲜知 ColdPilot 前后端接口契约（前端草案）
+  version: 0.1.0
+  description: |
+    本契约由前端 MVP 反向给出，描述前端实际依赖的全部数据操作。
+    后端模型应据此实现 HTTP API，且**不得修改前端已确认的数据结构**。
+
+    约定：
+    - 所有时间字段为 ISO-8601 UTC 字符串（如 2026-07-23T09:15:00Z）。
+    - 异步任务（诊断 / 执行与验证）采用**轮询**模式：POST 返回任务句柄，
+      前端按建议频率轮询对应 GET 直至进入终态。
+    - 所有演示 / 仿真结果通过 `provenance` 字段标注（demo / simulated / real），
+      后端必须透传该字段，前端据此标注，不得表达为真实成果。
+    - L2 操作必须经审批后方可执行；L3 动作永久禁止，仅生成安全审计记录。
+
+  contact:
+    name: ColdPilot Frontend
+servers:
+  - url: http://localhost:8080/api/v1
+    description: 本地开发（示意）
+
+tags:
+  - name: anomaly-events
+  - name: agent-tasks
+  - name: control-plans
+  - name: approvals
+  - name: executions
+  - name: reports
+  - name: security-audit
+
+paths:
+  /anomaly-events:
+    get:
+      tags: [anomaly-events]
+      summary: 获取异常事件列表
+      operationId: listAnomalyEvents
+      parameters:
+        - name: stage
+          in: query
+          required: false
+          description: 按任务阶段过滤（可选）
+          schema: { $ref: '#/components/schemas/TaskStatus' }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: pageSize
+          in: query
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: 异常事件摘要列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AnomalyEventSummary' }
+
+  /anomaly-events/{eventId}:
+    get:
+      tags: [anomaly-events]
+      summary: 获取异常事件详情
+      operationId: getAnomalyEvent
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: 异常事件详情（含库房、设备、库存、时序、库房事件）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnomalyEventDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /anomaly-events/{eventId}/diagnosis:
+    post:
+      tags: [agent-tasks]
+      summary: 发起诊断任务
+      description: 幂等建议：客户端可对同一事件携带幂等键重复提交，后端应去重。
+      operationId: startDiagnosis
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '202':
+          description: 诊断任务已受理，返回任务句柄（轮询 getAgentTask）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentTask' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /agent-tasks/{taskId}:
+    get:
+      tags: [agent-tasks]
+      summary: 查询 Agent 诊断任务状态（轮询）
+      description: 建议轮询频率 300–500ms，直至 status 进入 succeeded / failed。
+      operationId: getAgentTask
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: Agent 任务当前快照（含已揭示的工具调用）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AgentTask' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /agent-tasks/{taskId}/diagnosis-result:
+    get:
+      tags: [agent-tasks]
+      summary: 获取原因诊断结果
+      description: 仅当任务 status=succeeded 时可读；否则返回 409 INVALID_STATE。
+      operationId: getDiagnosisResult
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: 结构化原因诊断结果
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DiagnosisResult' }
+        '409': { $ref: '#/components/responses/InvalidState' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /anomaly-events/{eventId}/control-plans:
+    get:
+      tags: [control-plans]
+      summary: 获取候选控制方案
+      description: 仅返回 L2 候选方案；L3 动作不出现在候选方案中。
+      operationId: listControlPlans
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: 候选控制方案列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ControlPlan' }
+
+  /control-plans/{planId}/simulation:
+    post:
+      tags: [control-plans]
+      summary: 对方案发起仿真
+      description: 演示阶段同步返回仿真结果；结果恒为 simulated。
+      operationId: runSimulation
+      parameters:
+        - $ref: '#/components/parameters/PlanId'
+      responses:
+        '200':
+          description: 仿真结果
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SimulationResult' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /control-plans/{planId}/approval-requests:
+    post:
+      tags: [approvals]
+      summary: 创建审批请求（仅 L2）
+      description: 前置约束：方案必须已完成仿真，否则返回 409 INVALID_STATE。
+      operationId: requestApproval
+      parameters:
+        - $ref: '#/components/parameters/PlanId'
+      responses:
+        '201':
+          description: 审批请求已创建（含安全规则校验结果）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApprovalRequest' }
+        '409': { $ref: '#/components/responses/InvalidState' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /approval-requests/{requestId}/decision:
+    post:
+      tags: [approvals]
+      summary: 提交审批决定（批准 / 驳回）
+      description: 审批决定绑定方案版本；方案变化后旧审批自动失效。
+      operationId: submitApproval
+      parameters:
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ApprovalDecision' }
+      responses:
+        '200':
+          description: 审批结果
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApprovalResult' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /control-plans/{planId}/execution:
+    post:
+      tags: [executions]
+      summary: 发起控制执行（仿真执行）
+      description: 前置约束：方案必须已批准（approved），否则返回 409 INVALID_STATE。
+      operationId: startExecution
+      parameters:
+        - $ref: '#/components/parameters/PlanId'
+      responses:
+        '202':
+          description: 执行任务已受理，返回任务句柄（轮询 getExecutionTask）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExecutionTask' }
+        '409': { $ref: '#/components/responses/InvalidState' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /execution-tasks/{taskId}:
+    get:
+      tags: [executions]
+      summary: 查询执行与验证状态（轮询）
+      description: |
+        状态机：executing → verifying → recovered / failed。
+        仅验证成功（recovered）才视为恢复；执行失败不得直接标记 recovered。
+      operationId: getExecutionTask
+      parameters:
+        - $ref: '#/components/parameters/TaskId'
+      responses:
+        '200':
+          description: 执行任务当前快照（含观测曲线）
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ExecutionTask' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /anomaly-events/{eventId}/report:
+    get:
+      tags: [reports]
+      summary: 获取事件报告
+      operationId: getEventReport
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: 事件报告
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventReport' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /anomaly-events/{eventId}/security-audit:
+    get:
+      tags: [security-audit]
+      summary: 获取安全审计记录
+      description: 包含 L3 被拦截动作。L3 仅生成审计记录，不产生审批或控制指令。
+      operationId: listSecurityAuditEntries
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      responses:
+        '200':
+          description: 安全审计记录列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SecurityAuditEntry' }
+
+components:
+  parameters:
+    EventId:
+      name: eventId
+      in: path
+      required: true
+      schema: { type: string }
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema: { type: string }
+    PlanId:
+      name: planId
+      in: path
+      required: true
+      schema: { type: string }
+    RequestId:
+      name: requestId
+      in: path
+      required: true
+      schema: { type: string }
+
+  responses:
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    Conflict:
+      description: 状态冲突（如重复处理审批）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+    InvalidState:
+      description: 非法状态（如未仿真即审批 / 未批准即执行）
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ApiError' }
+
+  schemas:
+    ApiError:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum: [NOT_FOUND, CONFLICT, INVALID_STATE, VALIDATION, FORBIDDEN, INTERNAL]
+        message: { type: string }
+
+    # ---------- 枚举 ----------
+    Severity:
+      type: string
+      enum: [notice, warning, critical, emergency]
+    TaskStatus:
+      type: string
+      enum: [detected, diagnosing, diagnosisCompleted, simulating, simulationCompleted, awaitingApproval, approved, rejected, executing, verifying, recovered, diagnosisFailed, simulationFailed, executionFailed, safeFallback]
+    Provenance:
+      type: string
+      enum: [demo, simulated, real]
+    MetricKey:
+      type: string
+      enum: [temperature, humidity, o2, co2, pressureDiff]
+    SensorStatus:
+      type: string
+      enum: [online, offline, drifting, stale]
+    ControlMode:
+      type: string
+      enum: [ai_assisted, manual, safe_fallback]
+    DeviceKind:
+      type: string
+      enum: [compressor, fan, valve, door, meter]
+    DeviceStatus:
+      type: string
+      enum: [running, idle, fault, offline]
+    ApprovalLevel:
+      type: string
+      enum: [L0, L1, L2, L3]
+    RiskLevel:
+      type: string
+      enum: [low, medium, high]
+    AgentTaskStatus:
+      type: string
+      enum: [queued, running, succeeded, failed]
+    ExecutionStatus:
+      type: string
+      enum: [queued, executing, verifying, recovered, failed]
+
+    # ---------- 基础 ----------
+    TargetRange:
+      type: object
+      required: [metric, min, max, unit]
+      properties:
+        metric: { $ref: '#/components/schemas/MetricKey' }
+        min: { type: number }
+        max: { type: number }
+        unit: { type: string }
+    SensorReading:
+      type: object
+      required: [t, value]
+      properties:
+        t: { type: string, format: date-time }
+        value: { type: number }
+    SensorSeries:
+      type: object
+      required: [roomId, metric, unit, points, status, lastSampleAt]
+      properties:
+        roomId: { type: string }
+        metric: { $ref: '#/components/schemas/MetricKey' }
+        unit: { type: string }
+        points:
+          type: array
+          items: { $ref: '#/components/schemas/SensorReading' }
+        target: { $ref: '#/components/schemas/TargetRange' }
+        status: { $ref: '#/components/schemas/SensorStatus' }
+        lastSampleAt: { type: string, format: date-time }
+    ColdRoom:
+      type: object
+      required: [id, name, location, volumeM3, controlMode, targetRange, deviceIds, sensorIds, safetyParams]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        location: { type: string }
+        volumeM3: { type: number }
+        controlMode: { $ref: '#/components/schemas/ControlMode' }
+        targetRange: { $ref: '#/components/schemas/TargetRange' }
+        deviceIds: { type: array, items: { type: string } }
+        sensorIds: { type: array, items: { type: string } }
+        safetyParams:
+          type: object
+          required: [minTempC, maxTempC, maxRatePerHour]
+          properties:
+            minTempC: { type: number }
+            maxTempC: { type: number }
+            maxRatePerHour: { type: number }
+    Device:
+      type: object
+      required: [id, roomId, kind, name, status]
+      properties:
+        id: { type: string }
+        roomId: { type: string }
+        kind: { $ref: '#/components/schemas/DeviceKind' }
+        name: { type: string }
+        status: { $ref: '#/components/schemas/DeviceStatus' }
+        metrics:
+          type: object
+          additionalProperties: { type: number }
+    InventoryBatch:
+      type: object
+      required: [id, roomId, category, quantityKg, inboundAt, maturity, source, recommendedRange, maxStorageHours, risk]
+      properties:
+        id: { type: string }
+        roomId: { type: string }
+        category: { type: string }
+        quantityKg: { type: number }
+        inboundAt: { type: string, format: date-time }
+        maturity: { type: string }
+        source: { type: string }
+        recommendedRange: { $ref: '#/components/schemas/TargetRange' }
+        maxStorageHours: { type: number }
+        risk: { type: string, enum: [none, watch, high] }
+    RoomEventMarker:
+      type: object
+      required: [id, roomId, kind, at, label]
+      properties:
+        id: { type: string }
+        roomId: { type: string }
+        kind:
+          type: string
+          enum: [door_open, door_close, inbound, compressor_start, compressor_stop]
+        at: { type: string, format: date-time }
+        label: { type: string }
+        detail: { type: string }
+
+    # ---------- 异常事件 ----------
+    AnomalyEventSummary:
+      type: object
+      required: [id, roomId, roomName, type, title, severity, startedAt, durationMinutes, stage, awaitingApproval]
+      properties:
+        id: { type: string }
+        roomId: { type: string }
+        roomName: { type: string }
+        type: { type: string }
+        title: { type: string }
+        severity: { $ref: '#/components/schemas/Severity' }
+        startedAt: { type: string, format: date-time }
+        durationMinutes: { type: integer }
+        stage: { $ref: '#/components/schemas/TaskStatus' }
+        awaitingApproval: { type: boolean }
+    AnomalyEventDetail:
+      allOf:
+        - $ref: '#/components/schemas/AnomalyEventSummary'
+        - type: object
+          required: [room, devices, inventory, telemetry, roomEvents]
+          properties:
+            room: { $ref: '#/components/schemas/ColdRoom' }
+            devices:
+              type: array
+              items: { $ref: '#/components/schemas/Device' }
+            inventory:
+              type: array
+              items: { $ref: '#/components/schemas/InventoryBatch' }
+            telemetry:
+              type: array
+              items: { $ref: '#/components/schemas/SensorSeries' }
+            roomEvents:
+              type: array
+              items: { $ref: '#/components/schemas/RoomEventMarker' }
+
+    # ---------- 诊断 ----------
+    ToolInvocation:
+      type: object
+      required: [id, name, label, inputSummary, outputSummary, durationMs, status]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        label: { type: string }
+        inputSummary: { type: string }
+        outputSummary: { type: string }
+        durationMs: { type: integer }
+        status: { type: string, enum: [succeeded, failed] }
+    AgentTask:
+      type: object
+      required: [id, eventId, goal, status, tools, startedAt]
+      properties:
+        id: { type: string }
+        eventId: { type: string }
+        goal: { type: string }
+        status: { $ref: '#/components/schemas/AgentTaskStatus' }
+        tools:
+          type: array
+          items: { $ref: '#/components/schemas/ToolInvocation' }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time }
+    DiagnosticEvidence:
+      type: object
+      required: [id, kind, summary, sourceRef]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [supporting, counter] }
+        summary: { type: string }
+        sourceRef: { type: string }
+    DiagnosticCause:
+      type: object
+      required: [id, label, confidence, evidence, triageOrder, recommendedChecks]
+      properties:
+        id: { type: string }
+        label: { type: string }
+        confidence: { type: number, minimum: 0, maximum: 1 }
+        evidence:
+          type: array
+          items: { $ref: '#/components/schemas/DiagnosticEvidence' }
+        triageOrder: { type: integer }
+        recommendedChecks:
+          type: array
+          items: { type: string }
+    DiagnosisResult:
+      type: object
+      required: [eventId, understanding, dataSources, causes, uncertainties]
+      properties:
+        eventId: { type: string }
+        understanding: { type: string }
+        dataSources: { type: array, items: { type: string } }
+        causes:
+          type: array
+          items: { $ref: '#/components/schemas/DiagnosticCause' }
+        uncertainties: { type: array, items: { type: string } }
+
+    # ---------- 方案 / 仿真 ----------
+    ControlParam:
+      type: object
+      required: [key, label, value]
+      properties:
+        key: { type: string }
+        label: { type: string }
+        value:
+          oneOf:
+            - { type: number }
+            - { type: string }
+        unit: { type: string }
+        bound:
+          type: object
+          required: [min, max]
+          properties:
+            min: { type: number }
+            max: { type: number }
+    ControlPlan:
+      type: object
+      required: [id, eventId, name, kind, approvalLevel, approach, params, rollbackConditions, version]
+      properties:
+        id: { type: string }
+        eventId: { type: string }
+        name: { type: string }
+        kind: { type: string, enum: [recommended, alternative] }
+        approvalLevel: { type: string, enum: [L2], description: 候选方案恒为 L2 }
+        approach: { type: string }
+        params:
+          type: array
+          items: { $ref: '#/components/schemas/ControlParam' }
+        rollbackConditions: { type: array, items: { type: string } }
+        version: { type: integer }
+    SimulationResult:
+      type: object
+      required: [planId, planVersion, recoveryHours, energyKWh, overshootRisk, frostRisk, compressorCycles, predictedSeries, provenance]
+      properties:
+        planId: { type: string }
+        planVersion: { type: integer }
+        recoveryHours: { type: number }
+        energyKWh: { type: number }
+        overshootRisk: { $ref: '#/components/schemas/RiskLevel' }
+        frostRisk: { $ref: '#/components/schemas/RiskLevel' }
+        compressorCycles: { type: integer }
+        predictedSeries:
+          type: array
+          items: { $ref: '#/components/schemas/SensorReading' }
+        provenance: { type: string, enum: [simulated] }
+
+    # ---------- 审批 ----------
+    SafetyCheckItem:
+      type: object
+      required: [key, label, passed]
+      properties:
+        key:
+          type: string
+          enum: [whitelist, bounds, rate, conflict, permission]
+        label: { type: string }
+        passed: { type: boolean }
+        detail: { type: string }
+    ApprovalDecision:
+      type: object
+      required: [decision, approverId]
+      properties:
+        decision: { type: string, enum: [approved, rejected] }
+        approverId: { type: string }
+        reason: { type: string }
+    ApprovalRequest:
+      type: object
+      required: [id, planId, planVersion, level, safetyChecks, status, createdAt]
+      properties:
+        id: { type: string }
+        planId: { type: string }
+        planVersion: { type: integer }
+        level: { $ref: '#/components/schemas/ApprovalLevel' }
+        safetyChecks:
+          type: array
+          items: { $ref: '#/components/schemas/SafetyCheckItem' }
+        status: { type: string, enum: [pending, approved, rejected] }
+        createdAt: { type: string, format: date-time }
+        decidedBy: { type: string }
+        decidedAt: { type: string, format: date-time }
+        reason: { type: string }
+    ApprovalResult:
+      type: object
+      required: [requestId, decision, decidedBy, decidedAt]
+      properties:
+        requestId: { type: string }
+        decision: { type: string, enum: [approved, rejected] }
+        decidedBy: { type: string }
+        decidedAt: { type: string, format: date-time }
+
+    # ---------- 执行 ----------
+    ExecutionTask:
+      type: object
+      required: [id, planId, planVersion, status, observedSeries, startedAt, provenance]
+      properties:
+        id: { type: string }
+        planId: { type: string }
+        planVersion: { type: integer }
+        status: { $ref: '#/components/schemas/ExecutionStatus' }
+        observedSeries:
+          type: array
+          items: { $ref: '#/components/schemas/SensorReading' }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time }
+        recoveryMinutes: { type: integer }
+        triggeredRollback: { type: string }
+        provenance: { type: string, enum: [simulated] }
+
+    # ---------- 报告 ----------
+    EventReport:
+      type: object
+      required: [id, eventId, generatedAt, summary, causeSummary, toolsUsed, approval, outcome, followUps, provenance]
+      properties:
+        id: { type: string }
+        eventId: { type: string }
+        generatedAt: { type: string, format: date-time }
+        summary: { type: string }
+        causeSummary: { type: array, items: { type: string } }
+        toolsUsed: { type: array, items: { type: string } }
+        approval:
+          type: object
+          required: [level, decision, approver]
+          properties:
+            level: { $ref: '#/components/schemas/ApprovalLevel' }
+            decision: { type: string }
+            approver: { type: string }
+        outcome: { type: string }
+        followUps: { type: array, items: { type: string } }
+        provenance: { type: string, enum: [demo] }
+
+    # ---------- 安全审计 ----------
+    SecurityAuditEntry:
+      type: object
+      required: [id, eventId, category, action, source, attemptedAt, approvalLevel, triggeredRule, reason, outcome]
+      properties:
+        id: { type: string }
+        eventId: { type: string }
+        category: { type: string, enum: [blocked_action] }
+        action: { type: string }
+        source: { type: string, enum: [agent, user, external] }
+        attemptedAt: { type: string, format: date-time }
+        approvalLevel: { type: string, enum: [L3] }
+        triggeredRule: { type: string }
+        reason: { type: string }
+        outcome: { type: string, enum: [blocked] }
