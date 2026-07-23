@@ -12,9 +12,11 @@ from app.api.anomaly_events import router as anomaly_router
 from app.api.approvals import router as approvals_router
 from app.api.control_plans import router as control_plans_router
 from app.api.diagnosis import router as diagnosis_router
+from app.api.executions import router as executions_router
 
 router = APIRouter()
 router.include_router(anomaly_router)
 router.include_router(diagnosis_router)
 router.include_router(control_plans_router)
 router.include_router(approvals_router)
+router.include_router(executions_router)

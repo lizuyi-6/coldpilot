@@ -7,6 +7,7 @@ phases add handlers.
 from __future__ import annotations
 
 from app.application.diagnosis import DiagnosisHandler
+from app.application.execution import ExecutionHandler
 from app.infrastructure.tasks.worker import TaskWorker
 from app.infrastructure.tools.tools import build_tool_registry
 
@@ -15,4 +16,4 @@ def register_all(worker: TaskWorker) -> None:
     """Register all available task handlers."""
     registry = build_tool_registry()
     worker.add_handler(DiagnosisHandler(registry))
-    # B6 will register the execution handler here.
+    worker.add_handler(ExecutionHandler())
