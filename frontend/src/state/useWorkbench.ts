@@ -62,6 +62,7 @@ export function useWorkbench(options: UseWorkbenchOptions = {}) {
   const [state, dispatch] = useReducer(workbenchReducer, initialWorkbenchState);
   const [data, setData] = useState<WorkbenchData>(EMPTY_DATA);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const selectedEventIdRef = useRef<string | null>(null);
 
   const cancelPollRef = useRef<(() => void) | null>(null);
   useEffect(() => () => cancelPollRef.current?.(), []);
@@ -101,6 +102,7 @@ export function useWorkbench(options: UseWorkbenchOptions = {}) {
     async (eventId: string) => {
       stopPolling();
       setSelectedEventId(eventId);
+      selectedEventIdRef.current = eventId;
       dispatch({ type: 'RESET' });
       setData({ ...EMPTY_DATA });
       const [detail, auditEntries] = await Promise.all([
@@ -113,10 +115,11 @@ export function useWorkbench(options: UseWorkbenchOptions = {}) {
   );
 
   const startDiagnosis = useCallback(async () => {
-    if (!selectedEventId) return;
+    const eventId = selectedEventIdRef.current;
+    if (!eventId) return;
     stopPolling();
-    const task = await client.startDiagnosis(selectedEventId);
-    dispatch({ type: 'START_DIAGNOSIS', eventId: selectedEventId, taskId: task.id });
+    const task = await client.startDiagnosis(eventId);
+    dispatch({ type: 'START_DIAGNOSIS', eventId, taskId: task.id });
     setData((prev) => ({ ...prev, agentTask: task }));
     poll(
       () => client.getAgentTask(task.id),
@@ -126,7 +129,7 @@ export function useWorkbench(options: UseWorkbenchOptions = {}) {
           void (async () => {
             const [diagnosis, plans] = await Promise.all([
               client.getDiagnosisResult(task.id),
-              client.listControlPlans(selectedEventId),
+              client.listControlPlans(eventId),
             ]);
             setData((prev) => ({ ...prev, diagnosis, plans }));
             dispatch({ type: 'DIAGNOSIS_SUCCEEDED', plans });
@@ -140,7 +143,7 @@ export function useWorkbench(options: UseWorkbenchOptions = {}) {
         return false;
       },
     );
-  }, [client, poll, selectedEventId, stopPolling]);
+  }, [client, poll, stopPolling]);
 
   const simulatePlan = useCallback(
     async (planId: string) => {
@@ -212,13 +215,17 @@ export function useWorkbench(options: UseWorkbenchOptions = {}) {
             return false; // 继续轮询直至终态
           }
           if (snapshot.status === 'recovered') {
+            // 仿真时序下 mock 可能直接由 executing 跳到终态（跳过 verifying）。
+            // 先补发 EXECUTION_SUCCEEDED（若已在 verifying 则被状态机安全忽略），再进入终态。
+            dispatch({ type: 'EXECUTION_SUCCEEDED' });
             dispatch({ type: 'VERIFICATION_SUCCEEDED' });
-            void client.getEventReport(selectedEventId!).then((report) => {
+            void client.getEventReport(selectedEventIdRef.current!).then((report) => {
               setData((prev) => ({ ...prev, report }));
             });
             return true;
           }
           if (snapshot.status === 'failed') {
+            dispatch({ type: 'EXECUTION_SUCCEEDED' });
             dispatch({ type: 'VERIFICATION_FAILED', error: '执行未达预期，已回退传统规则 / PID' });
             return true;
           }
@@ -228,7 +235,7 @@ export function useWorkbench(options: UseWorkbenchOptions = {}) {
     } catch {
       dispatch({ type: 'EXECUTION_FAILED', error: '执行启动失败' });
     }
-  }, [client, poll, selectedEventId, state, stopPolling]);
+  }, [client, poll, state, stopPolling]);
 
   const enterSafeFallback = useCallback((reason?: string) => {
     stopPolling();
@@ -239,14 +246,15 @@ export function useWorkbench(options: UseWorkbenchOptions = {}) {
     stopPolling();
     dispatch({ type: 'RESET' });
     setData({ ...EMPTY_DATA });
-    if (selectedEventId) {
+    const eventId = selectedEventIdRef.current;
+    if (eventId) {
       const [detail, auditEntries] = await Promise.all([
-        client.getAnomalyEvent(selectedEventId),
-        client.listSecurityAuditEntries(selectedEventId),
+        client.getAnomalyEvent(eventId),
+        client.listSecurityAuditEntries(eventId),
       ]);
       setData((prev) => ({ ...prev, eventDetail: detail, auditEntries }));
     }
-  }, [client, selectedEventId, stopPolling]);
+  }, [client, stopPolling]);
 
   return {
     state,
