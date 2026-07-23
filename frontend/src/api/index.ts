@@ -1,5 +1,6 @@
 import type { ColdPilotClient } from './coldPilotClient';
 import { MockColdPilotClient } from './mockColdPilotClient';
+import { HttpColdPilotClient } from './httpColdPilotClient';
 import type { DemoControls } from './mockColdPilotClient';
 
 export type { ColdPilotClient } from './coldPilotClient';
@@ -7,15 +8,16 @@ export type { DemoControls } from './mockColdPilotClient';
 export { ApiError, isApiError } from './apiErrors';
 
 const mode = (import.meta.env.VITE_DATA_MODE ?? 'mock') as 'mock' | 'http';
+const httpBaseUrl = (import.meta.env.VITE_COLDPILOT_API_BASE_URL ?? '') as string;
 
 let clientInstance: ColdPilotClient | null = null;
 let demoControlsInstance: DemoControls | null = null;
 
 /**
- * 当前仅实现 mock 模式。后续接入后端时：
- * 1. 新增 HttpColdPilotClient implements ColdPilotClient；
- * 2. 在此按 VITE_DATA_MODE=http 实例化；
- * 3. 页面组件与状态机无需任何改动。
+ * 按 VITE_DATA_MODE 切换实现：
+ * - mock：内置演示数据（失败注入、场景重置）。
+ * - http：调用 ColdPilot 后端（FastAPI），base URL 由 VITE_COLDPILOT_API_BASE_URL 提供。
+ * 页面组件与状态机无需任何改动。
  */
 function createClient(): ColdPilotClient {
   if (mode === 'mock') {
@@ -23,9 +25,7 @@ function createClient(): ColdPilotClient {
     demoControlsInstance = mock;
     return mock;
   }
-  throw new Error(
-    `VITE_DATA_MODE=http 尚未实现。本阶段仅支持 mock。请新增 HttpColdPilotClient 后再切换。`,
-  );
+  return new HttpColdPilotClient(httpBaseUrl);
 }
 
 /** 获取前端唯一数据边界（单例）。 */
