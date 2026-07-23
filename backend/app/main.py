@@ -35,6 +35,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Ensure the default database is initialized.
     db = get_database()
 
+    # Seed demo data on first start (idempotent). Tables must already exist
+    # (created via `alembic upgrade head`); seeding failures are non-fatal.
+    try:
+        from app.seed.demo_data import seed_database  # noqa: PLC0415
+
+        async with db.session_factory() as session:
+            await seed_database(session)
+    except Exception:  # noqa: BLE001
+        log.exception("app.seed_failed")
+
     # Build + register the single worker, then start it.
     worker = get_worker()
     register_all(worker)
