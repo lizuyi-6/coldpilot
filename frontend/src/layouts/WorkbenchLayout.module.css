@@ -5,6 +5,11 @@
   min-height: 0;
 }
 
+/* 检查器折叠为把手：右列收窄为把手宽度。 */
+.layout[data-inspector-collapsed] {
+  grid-template-columns: var(--event-list-width) minmax(0, 1fr) 40px;
+}
+
 .list {
   border-right: var(--border-hairline) solid var(--color-border-subtle);
   background: var(--bg-surface);
@@ -20,15 +25,74 @@
 }
 
 .inspector {
+  position: relative;
   border-left: var(--border-hairline) solid var(--color-border-subtle);
   background: var(--bg-surface);
   min-height: 0;
   overflow-y: auto;
 }
 
-/* 1024–1439px：检查器默认折叠为把手，主体优先。 */
+/* 折叠把手（窄屏默认，可点击展开）。 */
+.inspectorHandle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border: none;
+  border-left: var(--border-hairline) solid var(--color-border-subtle);
+  background: var(--bg-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.inspectorHandle:hover {
+  background: var(--bg-hover);
+  color: var(--color-accent);
+}
+.handleLabel {
+  writing-mode: vertical-rl;
+  font-size: var(--font-sm);
+  letter-spacing: 2px;
+}
+
+/* 展开态右上角的收起按钮。 */
+.collapseBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+}
+.collapseBtn:hover {
+  background: var(--bg-hover);
+  color: var(--color-text-primary);
+}
+
+/* 1024–1439px：主体优先，事件列表适度收窄。 */
 @media (max-width: 1439px) {
   .layout {
-    grid-template-columns: var(--event-list-width) minmax(0, 1fr) auto;
+    grid-template-columns: minmax(200px, var(--event-list-width)) minmax(0, 1fr) var(--inspector-width);
+  }
+  .layout[data-inspector-collapsed] {
+    grid-template-columns: minmax(200px, var(--event-list-width)) minmax(0, 1fr) 40px;
+  }
+}
+
+/* ≤1100px：事件列表进一步收窄，保证诊断主体可读。 */
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 200px minmax(0, 1fr) var(--inspector-width);
+  }
+  .layout[data-inspector-collapsed] {
+    grid-template-columns: 200px minmax(0, 1fr) 40px;
   }
 }
