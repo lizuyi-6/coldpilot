@@ -36,6 +36,9 @@ export function InspectorPane({ wb }: { wb: UseWorkbench }) {
           <div className={styles.headerTitle}>方案检查器</div>
         </div>
         <div className={styles.emptyInspector}>完成诊断后，此处将展示候选控制方案、风险与审批操作。</div>
+        <div className={styles.body}>
+          <DemoControlsBar />
+        </div>
       </div>
     );
   }

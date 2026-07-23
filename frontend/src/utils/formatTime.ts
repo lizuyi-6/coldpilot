@@ -1,17 +1,21 @@
-/** 时间格式化工具（演示数据基于 UTC ISO 字符串）。 */
+/**
+ * 时间格式化工具。
+ * 演示数据基于固定 UTC 参考时间，统一按 UTC 渲染，
+ * 保证任何时区下显示均与演示叙事一致（如 09:15 起）。
+ */
 
-/** HH:mm（本地时区）。 */
+/** HH:mm（UTC）。 */
 export function formatTimeHM(iso: string): string {
   const d = new Date(iso);
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mm = String(d.getUTCMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;
 }
 
-/** M月d日 HH:mm。 */
+/** M月d日 HH:mm（UTC）。 */
 export function formatDateTime(iso: string): string {
   const d = new Date(iso);
-  return `${d.getMonth() + 1}月${d.getDate()}日 ${formatTimeHM(iso)}`;
+  return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日 ${formatTimeHM(iso)}`;
 }
 
 /** 持续时长：如 “1小时20分” / “25分钟”。 */
