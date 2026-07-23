@@ -12,7 +12,8 @@ xianniu/
 ├─ docs/
 │  ├─ product/              # 产品需求文档（PRD）
 │  ├─ contracts/            # 前后端接口契约（OpenAPI + 行为说明）
-│  └─ handoff/              # 前端交接文档（FRONTEND_HANDOFF / DECISIONS）
+│  ├─ handoff/              # 前端交接文档（FRONTEND_HANDOFF / DECISIONS）
+│  └─ screenshots/          # 界面截图（1440px / 1024px）
 ├─ README.md
 └─ .gitignore
 ```
@@ -35,6 +36,13 @@ pnpm typecheck  # 仅类型检查
 - 产品需求：`docs/product/coldpilot-prd-v1.0.pdf`
 - 接口契约：`docs/contracts/openapi.frontend-draft.yaml`、`docs/contracts/api-behavior.md`
 - 交接说明：`docs/handoff/FRONTEND_HANDOFF.md`、`docs/handoff/DECISIONS.md`
+- 界面截图：`docs/screenshots/workbench-1440.png`（宽屏三栏）、`docs/screenshots/workbench-1024.png`（检查器折叠）
+
+## 界面预览
+
+| 1440px（三栏展开） | 1024px（检查器折叠为把手） |
+|------|------|
+| ![workbench-1440](docs/screenshots/workbench-1440.png) | ![workbench-1024](docs/screenshots/workbench-1024.png) |
 
 ## 数据声明
 
