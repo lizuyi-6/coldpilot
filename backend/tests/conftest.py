@@ -67,3 +67,23 @@ async def client(db, worker) -> AsyncIterator[AsyncClient]:  # noqa: ANN001
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://testserver") as ac:
         yield ac
+
+
+@pytest_asyncio.fixture
+async def seeded(db) -> AsyncIterator[Database]:  # noqa: ANN001
+    """Isolated DB with demo seed data loaded."""
+    from app.seed.demo_data import seed_database
+
+    async with db.session_factory() as session:
+        await seed_database(session)
+    yield db
+
+
+@pytest_asyncio.fixture
+async def seeded_client(seeded, worker) -> AsyncIterator[AsyncClient]:  # noqa: ANN001
+    """HTTP client against a seeded isolated DB + fresh worker."""
+    from app.main import app
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as ac:
+        yield ac
