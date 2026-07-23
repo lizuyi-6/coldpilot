@@ -85,7 +85,7 @@ ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
     "rejected": frozenset({"simulating", "safeFallback"}),
     "executing": frozenset({"verifying", "executionFailed", "safeFallback"}),
     "verifying": frozenset({"recovered", "executionFailed", "safeFallback"}),
-    "executionFailed": frozenset({"safeFallback"}),
+    "executionFailed": frozenset({"simulating", "safeFallback"}),
     "recovered": frozenset(),
     "safeFallback": frozenset(),
 }
