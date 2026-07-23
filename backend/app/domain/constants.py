@@ -67,7 +67,7 @@ ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
     ),
     "diagnosisFailed": frozenset({"diagnosing", "safeFallback"}),
     "diagnosisCompleted": frozenset(
-        {"simulating", "safeFallback"}
+        {"simulating", "diagnosing", "safeFallback"}
     ),
     "simulating": frozenset(
         {"simulationCompleted", "simulationFailed", "safeFallback"}

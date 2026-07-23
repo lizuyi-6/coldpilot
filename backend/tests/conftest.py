@@ -25,7 +25,6 @@ os.environ.setdefault("AGENT_MODE", "deterministic")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./data/coldpilot-test.db")
 
 from app.infrastructure.db.session import Database, set_database  # noqa: E402
-from app.infrastructure.tasks.runtime import get_worker, reset_worker  # noqa: E402
 
 
 @pytest_asyncio.fixture
@@ -52,9 +51,13 @@ async def _ensure_schema(database: Database) -> None:
 
 @pytest_asyncio.fixture
 async def worker():
-    """Fresh worker (no handlers unless a test registers them)."""
+    """Fresh worker with all task handlers registered (no handlers in B0 sense)."""
+    from app.infrastructure.tasks.handlers import register_all
+    from app.infrastructure.tasks.runtime import get_worker, reset_worker
+
     reset_worker()
     w = get_worker()
+    register_all(w)
     yield w
     await w.stop()
 

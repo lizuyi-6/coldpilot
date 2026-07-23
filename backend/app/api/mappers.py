@@ -7,6 +7,7 @@ computed here, never read from a persisted column.
 
 from __future__ import annotations
 
+from app.api.schemas import AgentTask as AgentTaskSchema
 from app.api.schemas import (
     AnomalyEventDetail,
     AnomalyEventSummary,
@@ -33,6 +34,7 @@ from app.api.schemas import (
     to_z,
 )
 from app.domain.constants import awaiting_approval_from_stage
+from app.infrastructure.db.models import AgentTask as AgentTaskModel
 from app.infrastructure.db.models import (
     AnomalyEvent,
     ControlPlanVersion,
@@ -210,6 +212,18 @@ def map_tool_invocation(tool: ToolInvocationModel) -> ToolInvocation:
         outputSummary=tool.output_summary,
         durationMs=tool.duration_ms,
         status=tool.status,
+    )
+
+
+def map_agent_task(task: AgentTaskModel) -> AgentTaskSchema:
+    return AgentTaskSchema(
+        id=task.id,
+        eventId=task.event_id,
+        goal=task.goal,
+        status=task.status,
+        tools=[map_tool_invocation(t) for t in task.tool_invocations],
+        startedAt=to_z(task.started_at),
+        finishedAt=to_z(task.finished_at),
     )
 
 

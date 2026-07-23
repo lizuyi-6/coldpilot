@@ -9,6 +9,8 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.anomaly_events import router as anomaly_router
+from app.api.diagnosis import router as diagnosis_router
 
 router = APIRouter()
 router.include_router(anomaly_router)
+router.include_router(diagnosis_router)

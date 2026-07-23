@@ -66,6 +66,7 @@ class TaskWorker:
     async def _tick(self) -> None:
         db = get_database()
         async with db.session_factory() as session:
+            # Recover stale tasks first (e.g. after a crash/restart).
             for handler in self.handlers:
                 try:
                     affected = await handler.recover_stale(session, self.stale_timeout)
@@ -76,15 +77,12 @@ class TaskWorker:
                     await session.rollback()
                     continue
 
+            # Process at most ONE step per handler per tick. This yields genuine
+            # progressive reveal (one tool/observation per poll interval) and keeps
+            # a single worker fair across task types.
             for handler in self.handlers:
                 try:
-                    processed = 0
-                    # Drain claimable work for this handler up to a sane cap per tick.
-                    for _ in range(get_settings().worker_requeue_batch_size):
-                        n = await handler.claim_and_process(session)
-                        if n == 0:
-                            break
-                        processed += n
+                    await handler.claim_and_process(session)
                 except Exception:  # noqa: BLE001
                     log.exception("worker.process_failed", handler=handler.name)
                     await session.rollback()
