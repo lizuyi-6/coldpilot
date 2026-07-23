@@ -1,0 +1,22 @@
+.group {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  background: var(--color-neutral-100);
+  border-radius: var(--radius-md);
+  border: var(--border-hairline) solid var(--color-border-subtle);
+}
+.item {
+  padding: 3px var(--space-3);
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.item:hover { color: var(--color-text-primary); }
+.active {
+  background: var(--bg-surface);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  box-shadow: var(--elevation-1);
+}

@@ -1,0 +1,15 @@
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-micro);
+  font-weight: var(--font-weight-semibold);
+  line-height: 16px;
+  white-space: nowrap;
+}
+.notice { color: var(--sev-notice); background: var(--sev-notice-subtle); }
+.warning { color: var(--sev-warning); background: var(--sev-warning-subtle); }
+.critical { color: var(--sev-critical); background: var(--sev-critical-subtle); }
+.emergency { color: #fff; background: var(--sev-emergency); }

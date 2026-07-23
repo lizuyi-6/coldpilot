@@ -1,0 +1,26 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+  font-weight: var(--font-weight-medium);
+  border: var(--border-hairline) solid transparent;
+  white-space: nowrap;
+}
+.md { font-size: var(--text-caption); line-height: 20px; }
+.sm { font-size: var(--text-micro); line-height: 16px; }
+
+.accent { color: var(--color-accent); background: var(--color-accent-subtle); border-color: #cdeae6; }
+.info { color: var(--color-info); background: #e9f1fc; border-color: #cfdef7; }
+.success { color: var(--color-success); background: var(--color-success-subtle); border-color: #cbeadd; }
+.warning { color: var(--color-warning); background: var(--color-warning-subtle); border-color: #f0dfb8; }
+.danger { color: var(--color-danger); background: var(--color-danger-subtle); border-color: #f2cdc8; }
+.neutral { color: var(--color-neutral-600); background: var(--color-neutral-100); border-color: var(--color-neutral-200); }
+
+.spin {
+  animation: spin 1.1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

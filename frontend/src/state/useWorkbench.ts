@@ -20,7 +20,7 @@ export interface WorkbenchData {
   agentTask: AgentTask | null;
   diagnosis: DiagnosisResult | null;
   plans: ControlPlan[];
-  simulation: SimulationResult | null;
+  simulations: Record<string, SimulationResult>;
   approval: ApprovalRequest | null;
   execution: ExecutionTask | null;
   report: EventReport | null;
@@ -32,7 +32,7 @@ const EMPTY_DATA: WorkbenchData = {
   agentTask: null,
   diagnosis: null,
   plans: [],
-  simulation: null,
+  simulations: {},
   approval: null,
   execution: null,
   report: null,
@@ -149,7 +149,7 @@ export function useWorkbench(options: UseWorkbenchOptions = {}) {
       dispatch({ type: 'RUN_SIMULATION', planId });
       try {
         const result = await client.runSimulation(planId);
-        setData((prev) => ({ ...prev, simulation: result }));
+        setData((prev) => ({ ...prev, simulations: { ...prev.simulations, [planId]: result } }));
         dispatch({ type: 'SIMULATION_SUCCEEDED', planId });
       } catch {
         dispatch({ type: 'SIMULATION_FAILED', error: '仿真失败，请重试' });

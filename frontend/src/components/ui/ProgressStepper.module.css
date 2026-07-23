@@ -1,0 +1,45 @@
+.steps {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-micro);
+  color: var(--color-text-muted);
+}
+.step:not(:last-child)::after {
+  content: '';
+  width: 16px;
+  height: 1px;
+  background: var(--color-neutral-200);
+  margin: 0 var(--space-1);
+}
+.dot {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-neutral-300);
+  color: #fff;
+  flex: 0 0 16px;
+}
+.todo .dot { background: var(--bg-surface); }
+.active {
+  color: var(--color-accent);
+  font-weight: var(--font-weight-semibold);
+}
+.active .dot {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+.done { color: var(--color-text-secondary); }
+.done .dot {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}

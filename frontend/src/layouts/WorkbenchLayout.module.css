@@ -1,0 +1,34 @@
+.layout {
+  display: grid;
+  grid-template-columns: var(--event-list-width) minmax(var(--main-min-width), 1fr) var(--inspector-width);
+  height: 100%;
+  min-height: 0;
+}
+
+.list {
+  border-right: var(--border-hairline) solid var(--color-border-subtle);
+  background: var(--bg-surface);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.main {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bg-app);
+}
+
+.inspector {
+  border-left: var(--border-hairline) solid var(--color-border-subtle);
+  background: var(--bg-surface);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* 1024–1439px：检查器默认折叠为把手，主体优先。 */
+@media (max-width: 1439px) {
+  .layout {
+    grid-template-columns: var(--event-list-width) minmax(0, 1fr) auto;
+  }
+}
