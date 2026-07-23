@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_serializer
 
 
 def to_z(value: datetime | str | None) -> str | None:
@@ -26,6 +26,13 @@ def to_z(value: datetime | str | None) -> str | None:
 
 class SchemaModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
+
+    @model_serializer(mode="wrap")
+    def _omit_none(self, handler):  # noqa: ANN001, ANN202
+        # The frozen contract declares no field as nullable, so optional fields
+        # must be ABSENT (not null) when unset. Drop None values universally.
+        data = handler(self)
+        return {key: value for key, value in data.items() if value is not None}
 
 
 # --------------------------------------------------------------------------- #
