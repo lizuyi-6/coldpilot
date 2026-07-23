@@ -8,11 +8,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-router = APIRouter()
+from app.api.anomaly_events import router as anomaly_router
 
-# Phase routers are included here as they are implemented:
-# B2: anomaly events, control plans (read), reports, security audit
-# B3: diagnosis / agent tasks
-# B4: simulation
-# B5: approvals
-# B6: executions
+router = APIRouter()
+router.include_router(anomaly_router)
