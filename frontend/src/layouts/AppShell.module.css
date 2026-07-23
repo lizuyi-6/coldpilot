@@ -1,0 +1,122 @@
+.shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+
+/* ---------- 全局导航（72px，深色，与模块内导航区分） ---------- */
+.rail {
+  width: var(--nav-rail-width);
+  flex: 0 0 var(--nav-rail-width);
+  background: var(--bg-nav);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: var(--space-3) 0;
+  gap: var(--space-1);
+  overflow-y: auto;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  margin-bottom: var(--space-3);
+  color: var(--color-accent);
+}
+
+.navItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-1);
+  color: rgba(255, 255, 255, 0.62);
+  border-radius: var(--radius-md);
+  margin: 0 var(--space-2);
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.navItem:hover {
+  background: var(--bg-nav-active);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.navItemActive,
+.navItemActive:hover {
+  background: var(--bg-nav-active);
+  color: #fff;
+}
+
+.navItemActive::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--space-2));
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+}
+
+.navLabel {
+  font-size: var(--text-micro);
+  line-height: var(--text-micro-lh);
+}
+
+/* ---------- 主区 ---------- */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  height: var(--topbar-height);
+  flex: 0 0 var(--topbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 var(--space-4);
+  background: var(--bg-surface);
+  border-bottom: var(--border-hairline) solid var(--color-border-subtle);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.brandName {
+  font-size: var(--text-subtitle);
+  line-height: var(--text-subtitle-lh);
+  font-weight: var(--font-weight-semibold);
+}
+
+.brandSub {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbarRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
