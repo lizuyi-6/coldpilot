@@ -1,0 +1,34 @@
+/* 全局基础样式：背景、字体、滚动条、焦点。 */
+html,
+body {
+  background: var(--bg-app);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+}
+
+/* 全局键盘焦点：清晰可见，符合生产力工具要求。 */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: var(--color-accent-subtle);
+}
+
+/* 细滚动条，长时间使用不喧宾夺主。 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-300) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-300);
+  border-radius: var(--radius-full);
+}

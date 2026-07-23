@@ -1,0 +1,33 @@
+# 依赖与构建
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# 环境变量（保留 .env 模板中的 VITE_DATA_MODE，可按需忽略本地覆盖）
+.env.local
+.env.*.local
+
+# 编辑器与系统
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# 日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# 测试覆盖率
+coverage/
+
+# 临时产物：PRD 解析文本、临时截图、模型分析缓存一律不入库
+prd.txt
+*.tmp
+/tmp/
+/screenshots/tmp/

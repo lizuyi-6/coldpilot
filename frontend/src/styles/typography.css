@@ -1,0 +1,14 @@
+/* 字号层级工具类：与 tokens 的 type scale 对齐。 */
+.t-display { font-size: var(--text-display); line-height: var(--text-display-lh); font-weight: var(--font-weight-semibold); }
+.t-title { font-size: var(--text-title); line-height: var(--text-title-lh); font-weight: var(--font-weight-semibold); }
+.t-subtitle { font-size: var(--text-subtitle); line-height: var(--text-subtitle-lh); font-weight: var(--font-weight-medium); }
+.t-body { font-size: var(--text-body); line-height: var(--text-body-lh); font-weight: var(--font-weight-regular); }
+.t-caption { font-size: var(--text-caption); line-height: var(--text-caption-lh); font-weight: var(--font-weight-regular); }
+.t-micro { font-size: var(--text-micro); line-height: var(--text-micro-lh); font-weight: var(--font-weight-medium); }
+
+/* 数字统一使用等宽数字，便于表格/指标对齐。 */
+.numeric,
+.t-display,
+.t-title {
+  font-variant-numeric: tabular-nums;
+}
