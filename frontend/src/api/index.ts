@@ -41,3 +41,8 @@ export function getDemoControls(): DemoControls {
   }
   return demoControlsInstance;
 }
+
+/** 当前数据模式（设置页展示用）。 */
+export function getDataMode(): 'mock' | 'http' {
+  return mode;
+}
