@@ -1,0 +1,5 @@
+.btn { display: inline-flex; align-items: center; justify-content: center; background: transparent; border: none; border-radius: var(--radius-sm); color: var(--color-text-secondary); transition: background 0.12s ease, color 0.12s ease; }
+.btn:hover:not(:disabled) { background: var(--bg-hover); color: var(--color-text-primary); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.md { width: 32px; height: 32px; }
+.sm { width: 24px; height: 24px; }

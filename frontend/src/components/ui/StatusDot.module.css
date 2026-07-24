@@ -1,0 +1,10 @@
+.wrap { display: inline-flex; align-items: center; gap: var(--space-2); }
+.dot { width: 8px; height: 8px; border-radius: var(--radius-full); flex-shrink: 0; }
+.ok { background: var(--color-success); }
+.warn { background: var(--color-warning); }
+.danger { background: var(--color-danger); }
+.info { background: var(--color-info); }
+.muted { background: var(--color-neutral-300); }
+.pulse { animation: statusdot-pulse 1.6s ease-in-out infinite; }
+@keyframes statusdot-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(31,138,91,0.35); } 50% { box-shadow: 0 0 0 4px rgba(31,138,91,0); } }
+.label { font-size: var(--text-caption); color: var(--color-text-secondary); }

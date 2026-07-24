@@ -1,0 +1,8 @@
+.overlay { position: fixed; inset: 0; background: var(--bg-overlay); z-index: var(--z-drawer); }
+.drawer { position: fixed; top: 0; bottom: 0; max-width: 92vw; background: var(--bg-surface); box-shadow: var(--elevation-2); display: flex; flex-direction: column; }
+.drawer:focus { outline: none; }
+.right { right: 0; border-left: var(--border-hairline) solid var(--color-border-subtle); }
+.left { left: 0; border-right: var(--border-hairline) solid var(--color-border-subtle); }
+.header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4); border-bottom: var(--border-hairline) solid var(--color-border-subtle); }
+.title { margin: 0; font-size: var(--text-subtitle); font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
+.body { flex: 1; overflow: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); }

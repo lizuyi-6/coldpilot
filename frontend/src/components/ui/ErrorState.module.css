@@ -1,0 +1,4 @@
+.wrap { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: var(--space-6) var(--space-4); text-align: center; }
+.icon { color: var(--color-danger); }
+.title { margin: 0; font-size: var(--text-subtitle); font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
+.description { margin: 0; font-size: var(--text-body); color: var(--color-text-secondary); max-width: 46ch; }
