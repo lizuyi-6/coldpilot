@@ -33,7 +33,7 @@ const STATUS_ICON: Record<TaskStatus, LucideIcon> = {
 
 const SPINNING: TaskStatus[] = ['diagnosing', 'simulating', 'verifying'];
 
-/** 鐘舵€佸窘绔狅細棰滆壊 + 鍥炬爣 + 鏂囧瓧涓夐噸缂栫爜锛屼笉鍙緷璧栭鑹层€?*/
+/** 状态徽标：颜色 + 图标 + 文字三重编码，不只依赖颜色。 */
 export function StatusBadge({ status, size = 'md' }: { status: TaskStatus; size?: 'sm' | 'md' }) {
   const meta = TASK_STATUS_META[status];
   const Icon = STATUS_ICON[status];

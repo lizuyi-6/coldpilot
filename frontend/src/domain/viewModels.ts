@@ -96,4 +96,20 @@ export function roomOverall(
   return { label: '正常', tone: 'ok' };
 }
 
+/** 露点温度（由温湿度按 Magnus 公式推算，演示派生值）。 */
+export function dewPointC(tempC: number, rhPct: number): number | null {
+  if (rhPct <= 0 || rhPct > 100) return null;
+  const a = 17.27;
+  const b = 237.7;
+  const gamma = Math.log(rhPct / 100) + (a * tempC) / (b + tempC);
+  const denominator = a - gamma;
+  if (denominator === 0) return null;
+  return Math.round(((b * gamma) / denominator) * 10) / 10;
+}
+
+/** 仿真风险等级 → 文案。 */
+export function riskLevelLabel(risk: 'low' | 'medium' | 'high'): string {
+  return { low: '低', medium: '中', high: '高' }[risk];
+}
+
 export type { RoomEventMarker };

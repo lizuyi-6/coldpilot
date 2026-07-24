@@ -1,19 +1,40 @@
-.wrap { display: flex; flex-direction: column; gap: var(--space-2); }
+.wrap { width: 100%; }
 .svg { width: 100%; height: auto; display: block; }
-.roomBody { fill: var(--bg-subtle); stroke: var(--color-border-strong); stroke-width: 1.5; }
-.gridLine { stroke: var(--color-border-subtle); stroke-width: 1; }
-.stack { fill: var(--color-accent); opacity: 0.75; stroke: var(--color-accent-hover); stroke-width: 1; }
-.fan { fill: var(--bg-surface); stroke: var(--color-info); stroke-width: 2; }
-.fanBlade { stroke: var(--color-info); stroke-width: 2; stroke-linecap: round; }
-.compressor { fill: var(--color-neutral-600); }
-.doorClosed { fill: var(--color-neutral-400); }
-.doorOpen { fill: var(--color-warning); }
-.anomaly { fill: none; stroke: var(--color-danger); stroke-width: 2; stroke-dasharray: 4 3; animation: crd-pulse 1.6s ease-in-out infinite; }
-@keyframes crd-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-.legend { display: flex; flex-wrap: wrap; gap: var(--space-3); font-size: var(--text-caption); color: var(--color-text-secondary); }
-.legendItem { display: inline-flex; align-items: center; gap: var(--space-1); }
-.swComp, .swFan, .swDoor, .swStack { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-.swComp { background: var(--color-neutral-600); }
-.swFan { background: var(--color-info); }
-.swDoor { background: var(--color-neutral-400); }
-.swStack { background: var(--color-accent); }
+
+/* ---------- 库体 ---------- */
+.wallLeft { fill: #e7ecf2; stroke: #d3dce5; stroke-width: 1; }
+.wallRight { fill: #f0f4f8; stroke: #d3dce5; stroke-width: 1; }
+.wallSeam { stroke: #dbe2ea; stroke-width: 1; }
+.floor { fill: #edf1f5; stroke: #d3dce5; stroke-width: 1; }
+.floorGrid { stroke: #e0e6ec; stroke-width: 1; }
+
+/* ---------- 库门 ---------- */
+.doorRamp { fill: #dde4eb; stroke: #cbd5df; stroke-width: 0.8; }
+.doorClosed { fill: #c9d4df; stroke: #aebcca; stroke-width: 1; }
+.doorOpen { fill: #f3d9a4; stroke: #d9b96f; stroke-width: 1; }
+.doorInner { fill: rgba(255, 255, 255, 0.35); stroke: rgba(23, 32, 51, 0.12); stroke-width: 0.7; }
+.doorSeam { stroke: rgba(23, 32, 51, 0.18); stroke-width: 0.8; }
+
+/* ---------- 冷风机 ---------- */
+.fanPipe { stroke: #aeb9c5; stroke-width: 2; }
+.fanBody { fill: #dbe2ea; stroke: #b7c2ce; stroke-width: 1; }
+.fanInner { fill: #f4f7fa; stroke: #c3cdd8; stroke-width: 0.8; }
+.fanBlade { stroke: #8fa0b1; stroke-width: 1.6; stroke-linecap: round; }
+.fanHub { fill: #8fa0b1; }
+.fanRunning .fanBlades { animation: fan-spin 2.6s linear infinite; }
+@keyframes fan-spin { to { transform: rotate(360deg); } }
+
+/* ---------- 设备与传感 ---------- */
+.grille { stroke: #8b99a8; stroke-width: 1; }
+.sensorDot { fill: var(--color-accent); opacity: 0.85; }
+
+/* ---------- 异常位置 ---------- */
+.anomalyRing { fill: rgba(239, 68, 68, 0.07); stroke: var(--color-danger); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.anomalyPulse { fill: none; stroke: var(--color-danger); stroke-width: 1.4; opacity: 0.5; animation: anomaly-pulse 2s ease-out infinite; transform-origin: center; transform-box: fill-box; }
+@keyframes anomaly-pulse {
+  0% { transform: scale(0.55); opacity: 0.55; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+.anomalyBadge { fill: var(--color-danger); }
+.anomalyText { fill: #fff; font-size: 11px; font-weight: 600; font-family: var(--font-sans); }
+.anomalyLine { stroke: var(--color-danger); stroke-width: 1.2; }

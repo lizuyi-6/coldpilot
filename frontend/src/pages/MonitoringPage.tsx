@@ -54,12 +54,16 @@ export default function MonitoringPage() {
   const roomOptions = Object.values(rooms).map((b) => ({ value: b.room.id, label: b.room.name }));
   const metricOptions = Object.entries(METRIC_META).map(([value, meta]) => ({ value, label: meta.label }));
 
-  const nowMs = useMemo(() => Date.now(), []);
-  const windowMs = useMemo<[number, number]>(() => [nowMs - RANGE_MS[range], nowMs], [nowMs, range]);
-
   const series = metricSeries(telemetry, metric);
   const tempSeries = metricSeries(telemetry, 'temperature');
   const offlineCount = telemetry.filter((s) => s.status === 'offline').length;
+
+  // 演示数据锚定在固定参考时间：时间窗口以最近采样时刻为基准，而非真实当前时间。
+  const anchorMs = useMemo(() => {
+    const last = series?.lastSampleAt ?? tempSeries?.lastSampleAt;
+    return last ? Date.parse(last) : Date.now();
+  }, [series, tempSeries]);
+  const windowMs = useMemo<[number, number]>(() => [anchorMs - RANGE_MS[range], anchorMs], [anchorMs, range]);
 
   // 依据时间范围裁剪数据点。
   const clippedSeries = useMemo(() => {

@@ -1,6 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { useAppData } from '@/state/appData';
 import { useWorkbench } from '@/state/useWorkbench';
+import { riskLevelLabel } from '@/domain/viewModels';
+import { useStrategyData } from '@/features/commandCenter/useStrategyData';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Panel } from '@/components/ui/Panel';
 import { Select } from '@/components/ui/Select';
@@ -8,16 +10,20 @@ import { SeverityTag } from '@/components/ui/SeverityTag';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { Tag } from '@/components/ui/Tag';
+import { Sparkline } from '@/components/ui/Sparkline';
 import { DemoDataBadge } from '@/components/domain/DemoDataBadge';
 import { InspectorPane } from '@/features/inspector/InspectorPane';
+import { formatInt, formatNumber } from '@/utils/formatNumber';
 import styles from './StrategyPage.module.css';
 
 /**
  * 策略与仿真独立页：复用方案检查器的完整状态机操作
  * （方案切换 / 仿真 / 对比 / 审批 / 执行），不绕过 useWorkbench。
+ * 左侧为只读方案/仿真摘要（直接经 client 读取，不触碰状态机）。
  */
 export default function StrategyPage() {
-  const { events, loading } = useAppData();
+  const { client, events, loading } = useAppData();
   const wb = useWorkbench();
 
   const actionable = useMemo(() => events.filter((e) => e.stage !== 'recovered'), [events]);
@@ -32,6 +38,7 @@ export default function StrategyPage() {
   }, [actionable]);
 
   const currentEvent = events.find((e) => e.id === wb.selectedEventId);
+  const { plans, simulations, simulating } = useStrategyData(client, wb.selectedEventId ?? undefined);
 
   if (loading && events.length === 0) {
     return (
@@ -75,37 +82,56 @@ export default function StrategyPage() {
 
           <div className={styles.layout}>
             <Panel
-              title="诊断与方案生成"
+              title="候选方案与仿真摘要"
               action={
                 currentEvent ? <StatusBadge status={wb.status} size="sm" /> : undefined
               }
             >
-              <p className={styles.note}>
-                选择异常事件后，Agent 将诊断根因并生成候选控制方案（均需 L2 人工审批）。在右侧检查器中切换方案、运行仿真、并排对比预测曲线，随后提交审批并在仿真环境执行、持续验证。
-              </p>
-              {wb.context.plans.length === 0 ? (
+              {plans.length === 0 ? (
                 <EmptyState
-                  title={wb.status === 'detected' ? '尚未生成方案' : '无候选方案'}
-                  description={wb.status === 'detected' ? '在右侧检查器中开始诊断以生成候选方案。' : '诊断未产出候选方案。'}
+                  title="无候选方案"
+                  description="该事件尚未产出候选控制方案。"
                 />
               ) : (
-                <ul className={styles.planSummary}>
-                  {wb.context.plans.map((p) => {
-                    const sim = wb.data.simulations[p.id];
+                <div className={styles.planCards}>
+                  {plans.map((plan) => {
+                    const sim = simulations[plan.id];
+                    const curve = sim ? sim.predictedSeries.map((p) => p.value) : [];
                     return (
-                      <li key={p.id} className={styles.planSummaryItem}>
-                        <span className={styles.planSummaryName}>
-                          {p.kind === 'recommended' ? '方案 A（推荐）' : '方案 B（备选）'} · {p.name}
-                        </span>
-                        <span className={styles.note}>
-                          {p.approach}
-                          {sim ? ` · 恢复 ${sim.recoveryHours}h · 能耗 ${sim.energyKWh} kWh` : ' · 未仿真'}
-                        </span>
-                      </li>
+                      <div key={plan.id} className={styles.planCard}>
+                        <div className={styles.planCardHead}>
+                          <span className={styles.planCardName}>{plan.name}</span>
+                          <Tag tone={plan.kind === 'recommended' ? 'accent' : 'neutral'}>
+                            {plan.kind === 'recommended' ? '推荐' : '备选'}
+                          </Tag>
+                        </div>
+                        <div className={styles.planCardApproach}>{plan.approach}</div>
+                        <div className={styles.planCardStats}>
+                          <span>恢复 {sim ? `${formatNumber(sim.recoveryHours, 1)}h` : simulating ? '仿真中…' : '—'}</span>
+                          <span>能耗 {sim ? `${formatInt(sim.energyKWh)} kWh` : '—'}</span>
+                          <span>过冲 {sim ? riskLevelLabel(sim.overshootRisk) : '—'}</span>
+                          <span>冻害 {sim ? riskLevelLabel(sim.frostRisk) : '—'}</span>
+                        </div>
+                        {curve.length > 1 && (
+                          <div className={styles.planCardCurve}>
+                            <Sparkline data={curve} width={240} height={40} />
+                          </div>
+                        )}
+                        <div className={styles.planCardParams}>
+                          {plan.params.map((param) => (
+                            <span key={param.key} className={styles.planCardParam}>
+                              {param.label} <b className="numeric">{param.value}{param.unit ?? ''}</b>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     );
                   })}
-                </ul>
+                </div>
               )}
+              <p className={styles.note}>
+                以上仿真为预测结果（非真实成效）。切换方案、运行仿真、提交 L2 审批与执行均在右侧检查器内按状态机流程进行。
+              </p>
             </Panel>
 
             <div className={styles.inspectorWrap}>

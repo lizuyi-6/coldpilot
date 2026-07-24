@@ -1,31 +1,31 @@
 /* ============================================================
-   ColdPilot Design Tokens
+   ColdPilot Design Tokens（浅色工业看板主题）
    所有颜色 / 间距 / 字号 / 圆角 / 边框统一在此声明。
    组件样式只允许引用 var(--*)，禁止散落字面量。
-   深色模式预留 [data-theme="dark"] 结构，本阶段不实装具体值。
    ============================================================ */
 
 :root {
   /* ---------- 语义色 ---------- */
-  --color-accent: #0f766e;          /* 冷绿·产品强调：选中/主操作/焦点/主趋势线 */
-  --color-accent-hover: #0b625c;
-  --color-accent-subtle: #e6f4f2;   /* 强调浅底（选中项） */
-  --color-info: #2f6fdb;
-  --color-warning: #c7861b;
-  --color-warning-subtle: #faf3e3;
-  --color-danger: #c0392b;
-  --color-danger-subtle: #fbecea;
-  --color-success: #1f8a5b;
-  --color-success-subtle: #e8f5ee;
+  --color-accent: #0fa978;          /* 主绿：选中/主操作/焦点/主趋势线 */
+  --color-accent-hover: #0b9368;
+  --color-accent-subtle: #eaf8f3;   /* 主绿浅底（选中项） */
+  --color-info: #3478f6;
+  --color-info-subtle: #e9f1fe;
+  --color-warning: #e7a13a;
+  --color-warning-subtle: #fdf4e3;
+  --color-danger: #ef4444;
+  --color-danger-subtle: #fdeaea;
+  --color-success: #16a36f;
+  --color-success-subtle: #e7f6ef;
 
   /* ---------- 中性色 ---------- */
-  --color-neutral-900: #1b2430;
-  --color-neutral-700: #3b4756;
-  --color-neutral-600: #52606d;
-  --color-neutral-400: #9aa5b1;
-  --color-neutral-300: #cbd2d9;
-  --color-neutral-200: #e4e7eb;
-  --color-neutral-100: #f0f2f4;
+  --color-neutral-900: #172033;
+  --color-neutral-700: #33405a;
+  --color-neutral-600: #536176;
+  --color-neutral-400: #8b97a8;
+  --color-neutral-300: #c3ccd8;
+  --color-neutral-200: #e4e9ef;
+  --color-neutral-100: #f2f5f8;
 
   /* ---------- 文本 ---------- */
   --color-text-primary: var(--color-neutral-900);
@@ -35,37 +35,37 @@
   --color-text-on-accent: #ffffff;
 
   /* ---------- 背景层级 ---------- */
-  --bg-app: #f5f6f7;                /* 应用底 */
-  --bg-nav: #1f2937;                /* 全局导航（深，区分模块导航） */
-  --bg-nav-active: #111827;
+  --bg-app: #f5f7fa;                /* 应用底 */
+  --bg-nav: #ffffff;                /* 侧边导航（浅色） */
+  --bg-nav-active: var(--color-accent-subtle);
   --bg-surface: #ffffff;            /* 内容面板 */
-  --bg-subtle: #f0f2f4;             /* 事实带 / 表头 */
+  --bg-subtle: #f8fafb;             /* 表头 / 区块浅底 */
   --bg-selected: var(--color-accent-subtle);
-  --bg-hover: #eceef0;
-  --bg-overlay: rgba(27, 36, 48, 0.44);
+  --bg-hover: #eef2f5;
+  --bg-overlay: rgba(23, 32, 51, 0.44);
 
   /* ---------- 边框 / 焦点 ---------- */
-  --color-border-subtle: #e5e7eb;
-  --color-border-strong: #d1d5db;
+  --color-border-subtle: #e4e9ef;
+  --color-border-strong: #d7dee8;
   --color-focus-ring: var(--color-accent);
   --border-hairline: 1px;
-  --focus-ring: 0 0 0 2px var(--color-focus-ring);
+  --focus-ring: 0 0 0 2px rgba(15, 169, 120, 0.35);
 
   /* ---------- 告警等级（提醒/警告/严重/紧急） ---------- */
-  --sev-notice: #2f6fdb;
-  --sev-notice-subtle: #e9f1fc;
-  --sev-warning: #c7861b;
-  --sev-warning-subtle: #faf3e3;
-  --sev-critical: #c0392b;
-  --sev-critical-subtle: #fbecea;
-  --sev-emergency: #8e1f1f;
-  --sev-emergency-subtle: #f7e0e0;
+  --sev-notice: #3478f6;
+  --sev-notice-subtle: #e9f1fe;
+  --sev-warning: #e7a13a;
+  --sev-warning-subtle: #fdf4e3;
+  --sev-critical: #ef4444;
+  --sev-critical-subtle: #fdeaea;
+  --sev-emergency: #b91c1c;
+  --sev-emergency-subtle: #fbe4e4;
 
   /* ---------- 审批分级 L0~L3 ---------- */
-  --level-l0: #52606d;
-  --level-l1: #2f6fdb;
-  --level-l2: #c7861b;
-  --level-l3: #c0392b;
+  --level-l0: #536176;
+  --level-l1: #3478f6;
+  --level-l2: #e7a13a;
+  --level-l3: #ef4444;
 
   /* ---------- 字体 ---------- */
   --font-sans: "Inter", "SF Pro Text", "PingFang SC", "Microsoft YaHei",
@@ -94,12 +94,13 @@
 
   /* ---------- 圆角（克制） ---------- */
   --radius-sm: 4px;
-  --radius-md: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
   --radius-full: 999px;
 
-  /* ---------- 阴影（克制，仅抽屉/弹窗） ---------- */
-  --elevation-1: 0 1px 2px rgba(27, 36, 48, 0.06);
-  --elevation-2: 0 8px 24px rgba(27, 36, 48, 0.16);
+  /* ---------- 阴影（克制，仅抽屉/弹窗/下拉） ---------- */
+  --elevation-1: 0 1px 2px rgba(23, 32, 51, 0.05);
+  --elevation-2: 0 8px 24px rgba(23, 32, 51, 0.14);
 
   /* ---------- 层级 ---------- */
   --z-drawer: 40;
@@ -107,11 +108,12 @@
   --z-toast: 60;
 
   /* ---------- 布局尺寸 ---------- */
-  --nav-rail-width: 72px;
+  --nav-rail-width: 64px;
+  --nav-expanded-width: 216px;
   --event-list-width: 260px;
   --inspector-width: 360px;
   --main-min-width: 560px;
-  --topbar-height: 56px;
+  --topbar-height: 52px;
 }
 
 /* 深色模式预留：本阶段不启用具体值，仅保留结构。 */

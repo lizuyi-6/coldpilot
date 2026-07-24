@@ -54,10 +54,13 @@ function renderPage(node: React.ReactElement, route = '/') {
 describe('页面加载（mock 模式）', () => {
   it('指挥中心渲染核心区域', async () => {
     renderPage(<CommandCenterPage />);
-    await waitFor(() => expect(screen.getByText('指挥中心')).toBeInTheDocument(), { timeout: 4000 });
-    expect(await screen.findByText(/冷库概览/)).toBeInTheDocument();
-    expect(screen.getByText(/Agent 中心/)).toBeInTheDocument();
-    expect(screen.getByText(/今日能耗/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('冷库概览')).toBeInTheDocument(), { timeout: 4000 });
+    expect(await screen.findByText(/Agent 对话中心/)).toBeInTheDocument();
+    expect(screen.getByText(/能耗概览/)).toBeInTheDocument();
+    expect(screen.getByText(/库存概览/)).toBeInTheDocument();
+    expect(screen.getByText(/当前告警/)).toBeInTheDocument();
+    expect(screen.getByText(/策略与仿真/)).toBeInTheDocument();
+    expect(screen.getByText(/异常告警/)).toBeInTheDocument();
   });
 
   it('实时监控渲染指标与传感器状态', async () => {

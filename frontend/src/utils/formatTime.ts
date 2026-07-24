@@ -18,6 +18,20 @@ export function formatDateTime(iso: string): string {
   return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日 ${formatTimeHM(iso)}`;
 }
 
+/** YYYY-MM-DD HH:mm（UTC），表格场景。 */
+export function formatDateTimeISO(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${formatTimeHM(iso)}`;
+}
+
+/** MM-DD HH:mm（UTC），紧凑表格场景。 */
+export function formatDateTimeShort(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${formatTimeHM(iso)}`;
+}
+
 /** 持续时长：如 “1小时20分” / “25分钟”。 */
 export function formatDuration(minutes: number): string {
   if (minutes < 60) return `${minutes}分钟`;

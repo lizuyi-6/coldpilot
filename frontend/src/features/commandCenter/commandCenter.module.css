@@ -1,0 +1,238 @@
+/* 指挥中心各面板共享样式（浅色看板主题）。 */
+
+.panelFill { height: 100%; }
+.panelFill > div { flex: 1; min-height: 0; overflow: hidden; }
+.panelActions { display: inline-flex; align-items: center; gap: 10px; }
+.moreLink { font-size: var(--text-caption); color: var(--color-text-muted); text-decoration: none; white-space: nowrap; }
+.moreLink:hover { color: var(--color-accent); }
+
+/* ---------- 冷库概览组合面板 ---------- */
+.overviewBody { display: flex; flex-direction: column; gap: 12px; height: 100%; }
+.overviewTop { display: flex; gap: 18px; flex: 1; min-height: 0; }
+.diagramCol { width: 45%; flex-shrink: 0; display: flex; align-items: center; }
+.metricCol { flex: 1; min-width: 0; }
+.metricSectionTitle { font-size: 13px; font-weight: var(--font-weight-medium); color: var(--color-text-secondary); margin-bottom: 8px; }
+.metricGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.metricCell {
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: 8px;
+  padding: 9px 11px 7px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-surface);
+}
+.metricHead { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.metricIcon { color: var(--color-text-muted); flex-shrink: 0; }
+.metricLabel { font-size: var(--text-caption); color: var(--color-text-secondary); white-space: nowrap; }
+.metricStatus { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--color-text-muted); white-space: nowrap; }
+.metricValueRow { display: flex; align-items: baseline; gap: 4px; margin-top: 5px; }
+.metricValue { font-size: 23px; line-height: 26px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
+.metricUnit { font-size: var(--text-caption); color: var(--color-text-muted); }
+.metricBand { font-size: 11px; color: var(--color-text-muted); margin-top: 1px; white-space: nowrap; }
+.metricTrend { margin-top: 3px; }
+.metricTrend svg { width: 100%; height: 22px; }
+
+.deviceStrip { border-top: var(--border-hairline) solid var(--color-border-subtle); padding-top: 10px; }
+.deviceRow { display: flex; gap: 8px; }
+.deviceItem {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: 8px;
+  padding: 7px 9px;
+  min-width: 0;
+}
+.deviceIcon {
+  width: 30px; height: 30px;
+  border-radius: var(--radius-full);
+  background: var(--color-neutral-100);
+  color: var(--color-text-muted);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.deviceIconOn { background: var(--color-accent-subtle); color: var(--color-accent); }
+.deviceText { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
+.deviceName { font-size: var(--text-caption); color: var(--color-text-primary); font-weight: var(--font-weight-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.deviceStatus { font-size: 11px; color: var(--color-text-muted); white-space: nowrap; }
+.deviceStatusOn { color: var(--color-success); }
+.deviceStatusBad { color: var(--color-danger); }
+
+/* ---------- Agent 对话中心 ---------- */
+.agentUpdated { font-size: 11px; color: var(--color-text-muted); }
+.agentEmpty { padding: 24px 8px; font-size: var(--text-caption); color: var(--color-text-muted); }
+.agentBody { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }
+.userMsgRow { display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; }
+.userBubble {
+  max-width: 88%;
+  background: var(--color-accent-subtle);
+  color: var(--color-text-primary);
+  border: 1px solid #cdebe0;
+  border-radius: 10px 10px 2px 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+  line-height: 18px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.userAvatar {
+  width: 26px; height: 26px; border-radius: var(--radius-full);
+  background: var(--color-neutral-700); color: #fff;
+  font-size: 11px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.agentMsgRow { display: flex; align-items: flex-start; gap: 8px; }
+.agentAvatar {
+  width: 26px; height: 26px; border-radius: var(--radius-full);
+  background: var(--color-accent); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.agentCard {
+  flex: 1; min-width: 0;
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: 2px 10px 10px 10px;
+  background: var(--bg-subtle);
+  padding: 6px 10px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.agentProgress { display: flex; align-items: center; gap: 8px; font-size: var(--text-caption); color: var(--color-text-secondary); }
+.agentProgressDot { width: 7px; height: 7px; border-radius: var(--radius-full); background: var(--color-accent); animation: agent-blink 1s ease-in-out infinite; }
+@keyframes agent-blink { 50% { opacity: 0.25; } }
+.agentLeadInline { color: var(--color-text-primary); font-weight: var(--font-weight-semibold); margin-right: 4px; }
+.agentUnderstanding {
+  font-size: var(--text-caption); color: var(--color-text-secondary); line-height: 17px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.agentSectionTitle { font-size: 12px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); margin-top: 2px; }
+.causeTable { width: 100%; border-collapse: collapse; font-size: var(--text-caption); background: var(--bg-surface); border-radius: 6px; overflow: hidden; table-layout: fixed; }
+.causeTable th { text-align: left; padding: 4px 7px; background: var(--color-neutral-100); color: var(--color-text-secondary); font-weight: var(--font-weight-medium); white-space: nowrap; }
+.causeTable td { padding: 4px 7px; border-top: var(--border-hairline) solid var(--color-border-subtle); color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.causeColIdx { width: 20px; color: var(--color-text-muted); }
+.causeColConf { width: 52px; }
+.causeName { font-weight: var(--font-weight-medium); width: 92px; }
+.causeConf { font-weight: var(--font-weight-semibold); }
+.causeEvidence { color: var(--color-text-secondary); }
+.suggestList { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 2px; font-size: var(--text-caption); color: var(--color-text-primary); line-height: 16px; }
+.riskNote { font-size: 11px; color: var(--color-text-muted); line-height: 14px; border-top: 1px dashed var(--color-border-strong); padding-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.agentFooter { display: flex; gap: 8px; align-items: center; border-top: var(--border-hairline) solid var(--color-border-subtle); padding-top: 8px; margin-top: 8px; }
+.agentFooter > div { flex: 1; }
+.sendBtn {
+  width: 34px; height: 34px; border: none; border-radius: 8px;
+  background: var(--color-accent); color: #fff; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sendBtn:hover { background: var(--color-accent-hover); }
+.sendBtn:disabled { background: var(--color-neutral-300); cursor: not-allowed; }
+.detailLink { background: none; border: none; color: var(--color-accent); font-size: var(--text-caption); cursor: pointer; white-space: nowrap; padding: 0 2px; }
+.detailLink:disabled { color: var(--color-neutral-300); cursor: not-allowed; }
+.detailLink:hover:not(:disabled) { text-decoration: underline; }
+
+/* ---------- 库存概览 ---------- */
+.invBody { display: flex; align-items: center; gap: 14px; height: 100%; }
+.donutWrap { position: relative; width: 96px; height: 96px; flex-shrink: 0; }
+.donut { width: 100%; height: 100%; }
+.donutCenter { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
+.donutLabel { font-size: 10px; color: var(--color-text-muted); }
+.donutValue { font-size: 19px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
+.donutUnit { font-size: 10px; color: var(--color-text-muted); }
+.invList { list-style: none; margin: 0; padding: 0; flex: 1; display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.invItem { display: flex; align-items: center; gap: 7px; font-size: var(--text-caption); min-width: 0; }
+.invDot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.invName { color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.invKg { margin-left: auto; color: var(--color-text-secondary); white-space: nowrap; }
+.invPct { width: 34px; text-align: right; color: var(--color-text-muted); white-space: nowrap; }
+.invMeta { font-size: 11px; color: var(--color-text-muted); border-top: 1px dashed var(--color-border-subtle); padding-top: 6px; margin-top: 2px; list-style: none; }
+
+/* ---------- 能耗概览 ---------- */
+.energyBody { display: flex; flex-direction: column; height: 100%; gap: 6px; }
+.energyTopRow { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.energyCaption { font-size: 11px; color: var(--color-text-muted); }
+.energyValue { font-size: 25px; line-height: 28px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
+.energyUnit { font-size: var(--text-caption); color: var(--color-text-muted); margin-left: 4px; }
+.energyDelta { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; white-space: nowrap; padding-bottom: 3px; }
+.energyDeltaDown { color: var(--color-success); }
+.energyDeltaUp { color: var(--color-danger); }
+.energyBars { flex: 1; min-height: 34px; display: flex; align-items: flex-end; gap: 2px; }
+.energyBar { flex: 1; border-radius: 2px 2px 0 0; opacity: 0.9; }
+.energyAxis { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-muted); }
+
+/* ---------- 当前告警 ---------- */
+.alertList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.alertItem { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: var(--border-hairline) solid var(--color-border-subtle); min-width: 0; }
+.alertItem:last-child { border-bottom: none; }
+.alertName { font-size: var(--text-caption); color: var(--color-text-primary); font-weight: var(--font-weight-medium); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alertMeta { font-size: 11px; color: var(--color-text-muted); white-space: nowrap; margin-left: auto; }
+
+/* ---------- 策略与仿真 ---------- */
+.planTabBody { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.planCards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.planCard { border: var(--border-hairline) solid var(--color-border-subtle); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.planHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.planName { font-size: 13px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
+.planApproach { font-size: 11px; color: var(--color-text-secondary); line-height: 16px; }
+.planStats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+.planStat { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.planStatLabel { font-size: 11px; color: var(--color-text-muted); white-space: nowrap; }
+.planStatValue { font-size: var(--text-caption); font-weight: var(--font-weight-medium); color: var(--color-text-primary); white-space: nowrap; }
+.planCurve { border-top: 1px dashed var(--color-border-subtle); padding-top: 6px; }
+.planCurve svg { width: 100%; height: 44px; }
+.planCurveEmpty { font-size: 11px; color: var(--color-text-muted); }
+.planCurveAxis { display: flex; justify-content: space-between; font-size: 10px; color: var(--color-text-muted); }
+.controlPlanRow { display: flex; gap: 12px; align-items: stretch; }
+.controlPlanTableWrap { flex: 1; min-width: 0; }
+.controlPlanTitle { font-size: 13px; font-weight: var(--font-weight-medium); color: var(--color-text-primary); margin-bottom: 6px; }
+.controlPlanTable { width: 100%; border-collapse: collapse; font-size: var(--text-caption); }
+.controlPlanTable th { text-align: left; padding: 5px 8px; background: var(--color-neutral-100); color: var(--color-text-secondary); font-weight: var(--font-weight-medium); white-space: nowrap; }
+.controlPlanTable td { padding: 5px 8px; border-top: var(--border-hairline) solid var(--color-border-subtle); color: var(--color-text-primary); white-space: nowrap; }
+.controlPlanActions { display: flex; flex-direction: column; gap: 8px; justify-content: center; flex-shrink: 0; }
+.controlPlanHint { font-size: 10px; color: var(--color-text-muted); max-width: 130px; line-height: 14px; }
+.libraryItem { border: var(--border-hairline) solid var(--color-border-subtle); border-radius: 8px; padding: 9px 12px; display: flex; flex-direction: column; gap: 4px; }
+.libraryRollback { font-size: 11px; color: var(--color-text-muted); line-height: 16px; }
+.savingWindow { font-size: 13px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
+
+/* ---------- 异常告警表格 ---------- */
+.configBtn {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--text-caption); color: var(--color-text-secondary);
+  background: var(--bg-surface); border: var(--border-hairline) solid var(--color-border-strong);
+  border-radius: 6px; padding: 4px 10px; cursor: not-allowed; opacity: 0.65;
+}
+.alertFilters { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.onlyOpen { display: inline-flex; align-items: center; gap: 5px; font-size: var(--text-caption); color: var(--color-text-secondary); white-space: nowrap; cursor: pointer; }
+.onlyOpen input { accent-color: var(--color-accent); }
+.tableOps { display: inline-flex; gap: 8px; }
+.opLink { background: none; border: none; padding: 0; font-size: var(--text-caption); color: var(--color-info); cursor: pointer; }
+.opLink:hover { text-decoration: underline; }
+.opLinkPrimary { color: var(--color-accent); }
+.pager { display: flex; align-items: center; gap: 10px; margin-top: 8px; font-size: var(--text-caption); color: var(--color-text-secondary); }
+.pagerTotal { white-space: nowrap; }
+.pagerBtns { display: inline-flex; gap: 4px; margin-left: auto; }
+.pageBtn {
+  min-width: 24px; height: 24px; padding: 0 6px;
+  border: var(--border-hairline) solid var(--color-border-strong);
+  background: var(--bg-surface); border-radius: 5px;
+  font-size: var(--text-caption); color: var(--color-text-secondary); cursor: pointer;
+}
+.pageBtn:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-accent); }
+.pageBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.pageBtnActive { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+.pagerSize { color: var(--color-text-muted); white-space: nowrap; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 1279px) {
+  .planCards { grid-template-columns: 1fr; }
+}
+@media (max-width: 1100px) {
+  .controlPlanRow { flex-direction: column; }
+  .controlPlanActions { flex-direction: row; align-items: center; }
+  .controlPlanHint { max-width: none; }
+}
+@media (max-width: 760px) {
+  .overviewTop { flex-direction: column; }
+  .diagramCol { width: 100%; }
+  .metricGrid { grid-template-columns: repeat(2, 1fr); }
+  .deviceRow { flex-wrap: wrap; }
+  .deviceItem { flex: 1 1 44%; }
+}
