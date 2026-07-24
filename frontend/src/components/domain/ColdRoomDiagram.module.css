@@ -1,0 +1,19 @@
+.wrap { display: flex; flex-direction: column; gap: var(--space-2); }
+.svg { width: 100%; height: auto; display: block; }
+.roomBody { fill: var(--bg-subtle); stroke: var(--color-border-strong); stroke-width: 1.5; }
+.gridLine { stroke: var(--color-border-subtle); stroke-width: 1; }
+.stack { fill: var(--color-accent); opacity: 0.75; stroke: var(--color-accent-hover); stroke-width: 1; }
+.fan { fill: var(--bg-surface); stroke: var(--color-info); stroke-width: 2; }
+.fanBlade { stroke: var(--color-info); stroke-width: 2; stroke-linecap: round; }
+.compressor { fill: var(--color-neutral-600); }
+.doorClosed { fill: var(--color-neutral-400); }
+.doorOpen { fill: var(--color-warning); }
+.anomaly { fill: none; stroke: var(--color-danger); stroke-width: 2; stroke-dasharray: 4 3; animation: crd-pulse 1.6s ease-in-out infinite; }
+@keyframes crd-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+.legend { display: flex; flex-wrap: wrap; gap: var(--space-3); font-size: var(--text-caption); color: var(--color-text-secondary); }
+.legendItem { display: inline-flex; align-items: center; gap: var(--space-1); }
+.swComp, .swFan, .swDoor, .swStack { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.swComp { background: var(--color-neutral-600); }
+.swFan { background: var(--color-info); }
+.swDoor { background: var(--color-neutral-400); }
+.swStack { background: var(--color-accent); }

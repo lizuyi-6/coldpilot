@@ -1,0 +1,83 @@
+.page { display: flex; flex-direction: column; gap: var(--space-4); }
+
+/* 顶部概览行：冷库示意 + 指标网格 */
+.topGrid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: var(--space-4);
+  align-items: stretch;
+}
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+/* 三栏内容 */
+.columns {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+.colStack { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+
+/* Agent 中心 */
+.agentInput {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.agentInput input { flex: 1; }
+.causeRow { display: flex; flex-direction: column; gap: var(--space-2); }
+.causeItem { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); font-size: var(--text-body); }
+.suggestList { margin: 0; padding-left: var(--space-5); display: flex; flex-direction: column; gap: var(--space-1); color: var(--color-text-secondary); font-size: var(--text-body); }
+
+/* 库存条 */
+.invBar { display: flex; height: 12px; border-radius: var(--radius-sm); overflow: hidden; }
+.invSeg { height: 100%; }
+.invLegend { display: flex; flex-wrap: wrap; gap: var(--space-3); font-size: var(--text-caption); color: var(--color-text-secondary); }
+.invLegendItem { display: inline-flex; align-items: center; gap: var(--space-1); }
+.invSw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* 告警行 */
+.alertRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--border-hairline) solid var(--color-border-subtle); }
+.alertRow:last-child { border-bottom: none; }
+.alertInfo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.alertTitle { font-size: var(--text-body); color: var(--color-text-primary); font-weight: var(--font-weight-medium); }
+.alertMeta { font-size: var(--text-caption); color: var(--color-text-muted); display: flex; gap: var(--space-3); flex-wrap: wrap; }
+
+/* 能耗 */
+.energySummary { display: flex; align-items: baseline; gap: var(--space-3); }
+.energyBig { font-size: var(--text-display); font-weight: var(--font-weight-semibold); color: var(--color-text-primary); line-height: var(--text-display-lh); }
+.energyUnit { font-size: var(--text-caption); color: var(--color-text-muted); }
+.delta { font-size: var(--text-caption); font-weight: var(--font-weight-medium); }
+.deltaDown { color: var(--color-success); }
+.deltaUp { color: var(--color-danger); }
+
+/* 策略摘要 */
+.planRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--border-hairline) solid var(--color-border-subtle); }
+.planRow:last-child { border-bottom: none; }
+.planName { font-size: var(--text-body); font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
+.planMeta { display: flex; gap: var(--space-3); flex-wrap: wrap; font-size: var(--text-caption); color: var(--color-text-muted); margin-top: 2px; }
+
+/* 设备 chips */
+.deviceChips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.deviceChip { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--bg-subtle); border: var(--border-hairline) solid var(--color-border-subtle); border-radius: var(--radius-sm); font-size: var(--text-caption); color: var(--color-text-primary); }
+.deviceChipIcon { display: inline-flex; color: var(--color-text-muted); }
+
+.sectionNote { font-size: var(--text-caption); color: var(--color-text-muted); }
+
+/* 响应式 */
+@media (max-width: 1440px) {
+  .metricGrid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 1280px) {
+  .topGrid { grid-template-columns: 300px 1fr; }
+  .columns { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 1023px) {
+  .topGrid { grid-template-columns: 1fr; }
+  .columns { grid-template-columns: 1fr; }
+  .metricGrid { grid-template-columns: repeat(2, 1fr); }
+}
