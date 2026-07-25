@@ -1,0 +1,90 @@
+/* 库存管理页样式（KPI / 筛选 / 表格 / 批次详情底部区）。 */
+
+.page { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.kpiGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
+.kpiCard {
+  display: flex; align-items: center; gap: var(--space-3);
+  background: var(--bg-surface);
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+.kpiIcon {
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  background: var(--color-accent-subtle); color: var(--color-accent);
+}
+.kpiIconWarn { background: var(--color-danger-subtle); color: var(--color-danger); }
+.kpiBody { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kpiLabel { font-size: var(--text-caption); color: var(--color-text-secondary); }
+.kpiValue { font-size: 22px; line-height: 28px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+.kpiValue small { font-size: var(--text-caption); font-weight: var(--font-weight-regular); color: var(--color-text-muted); margin-left: 3px; }
+.kpiSub { font-size: var(--text-micro); color: var(--color-text-muted); }
+
+.toolbar { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.toolbarSpacer { flex: 1; }
+
+.remainingCell { font-weight: var(--font-weight-semibold); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.remainingHigh { color: var(--color-danger); }
+.remainingWatch { color: var(--color-warning); }
+.remainingOk { color: var(--color-accent); }
+
+.pagerRow { display: flex; justify-content: flex-end; padding: var(--space-2) var(--space-3); }
+
+/* ---------- 批次详情（底部区） ---------- */
+.batchDetail { display: flex; flex-direction: column; gap: var(--space-3); }
+.batchDetailHead { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.batchDetailTitle { font-size: var(--text-subtitle); font-weight: var(--font-weight-semibold); color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+.batchDetailClose {
+  margin-left: auto;
+  border: none; background: none; padding: 4px; cursor: pointer;
+  color: var(--color-text-muted); border-radius: var(--radius-sm);
+}
+.batchDetailClose:hover { color: var(--color-text-primary); background: var(--bg-subtle); }
+
+.batchGrid { display: grid; grid-template-columns: 220px 1fr 1fr 1fr 1.1fr; gap: var(--space-4); align-items: start; }
+.batchCol { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.batchColTitle { font-size: var(--text-caption); font-weight: var(--font-weight-medium); color: var(--color-text-secondary); }
+.batchFactRow { display: flex; align-items: center; gap: 6px; font-size: var(--text-caption); color: var(--color-text-primary); }
+.batchFactRow .label { color: var(--color-text-muted); }
+
+.suitRow {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-size: var(--text-caption);
+  padding: 5px 0;
+  border-bottom: var(--border-hairline) dashed var(--color-border-subtle);
+}
+.suitRow:last-child { border-bottom: none; }
+.suitRow .name { width: 44px; color: var(--color-text-secondary); flex-shrink: 0; }
+.suitRow .value { flex: 1; color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+
+.relatedItem {
+  display: flex; align-items: center; gap: var(--space-2);
+  border: 1px solid var(--color-border-subtle); border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-caption); color: var(--color-text-primary);
+  cursor: pointer; background: var(--bg-surface); text-align: left; width: 100%;
+}
+.relatedItem:hover { border-color: var(--color-accent); }
+.relatedItem .title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.relatedItem time { font-size: var(--text-micro); color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
+.trendLegend { display: flex; gap: var(--space-3); font-size: var(--text-micro); color: var(--color-text-muted); }
+.trendLegend i { display: inline-block; width: 14px; height: 0; border-top: 2px solid var(--color-accent); vertical-align: middle; margin-right: 4px; }
+.trendLegend .forecast i { border-top-style: dashed; border-top-color: var(--color-danger); }
+
+.adviceList { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 4px; }
+.adviceList li { font-size: var(--text-caption); color: var(--color-text-secondary); line-height: 1.55; }
+.adviceActions { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); }
+
+.note { font-size: var(--text-micro); color: var(--color-text-muted); line-height: 1.6; }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 1440px) {
+  .batchGrid { grid-template-columns: 200px 1fr 1fr 1fr 1fr; }
+}
+@media (max-width: 1280px) {
+  .kpiGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .batchGrid { grid-template-columns: 1fr 1fr; }
+}

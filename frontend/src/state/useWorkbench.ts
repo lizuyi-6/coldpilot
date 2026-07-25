@@ -110,6 +110,19 @@ export function useWorkbench(options: UseWorkbenchOptions = {}) {
         client.listSecurityAuditEntries(eventId),
       ]);
       setData((prev) => ({ ...prev, eventDetail: detail, auditEntries }));
+      // 后端已进入诊断后阶段：加载方案并水合到 diagnosisCompleted，
+      // 使策略页/审批流对进行中的事件保持可用（而非错误地重新诊断）。
+      if (detail.stage !== 'detected' && detail.stage !== 'diagnosing' && detail.stage !== 'diagnosisFailed') {
+        try {
+          const plans = await client.listControlPlans(eventId);
+          if (plans.length > 0 && selectedEventIdRef.current === eventId) {
+            setData((prev) => ({ ...prev, plans }));
+            dispatch({ type: 'HYDRATE', plans });
+          }
+        } catch {
+          /* 无方案时保持 detected，由用户手动诊断 */
+        }
+      }
     },
     [client, stopPolling],
   );

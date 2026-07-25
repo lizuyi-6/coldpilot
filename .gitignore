@@ -25,6 +25,7 @@ logs/
 
 # 测试覆盖率
 coverage/
+frontend/.playwright-cli/
 
 # 临时产物：PRD 解析文本、临时截图、模型分析缓存一律不入库
 prd.txt

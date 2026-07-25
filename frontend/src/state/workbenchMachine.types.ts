@@ -43,4 +43,5 @@ export type WorkbenchEvent =
   | { type: 'VERIFICATION_SUCCEEDED' }
   | { type: 'VERIFICATION_FAILED'; error?: string }
   | { type: 'ENTER_SAFE_FALLBACK'; reason?: string }
+  | { type: 'HYDRATE'; plans: ControlPlan[] }
   | { type: 'RESET' };

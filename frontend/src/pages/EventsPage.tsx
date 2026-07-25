@@ -1,25 +1,39 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { AnomalyEventSummary, Severity } from '@/domain/types';
-import { useAppData } from '@/state/appData';
+import type { AnomalyEventSummary } from '@/domain/types';
+import { useAppData, type RoomBundle } from '@/state/appData';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Panel } from '@/components/ui/Panel';
-import { Table, type TableColumn } from '@/components/ui/Table';
+import { Table, type SortDirection, type TableColumn } from '@/components/ui/Table';
 import { Search } from '@/components/ui/Search';
 import { Select } from '@/components/ui/Select';
-import { Segmented } from '@/components/ui/Segmented';
-import { Tag } from '@/components/ui/Tag';
+import { Tag, type TagTone } from '@/components/ui/Tag';
 import { SeverityTag } from '@/components/ui/SeverityTag';
-import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { OfflineState } from '@/components/ui/OfflineState';
+import { Pagination } from '@/components/ui/Pagination';
+import { Drawer } from '@/components/ui/Drawer';
 import { DemoDataBadge } from '@/components/domain/DemoDataBadge';
-import { formatDateTime, formatDuration } from '@/utils/formatTime';
-import styles from './EventsPage.module.css';
-
-const PAGE_SIZE = 8;
+import { AlertKpiCards } from '@/features/events/AlertKpiCards';
+import { AlertDetailContent, AlertDetailPanel } from '@/features/events/AlertDetailPanel';
+import { latestValue } from '@/domain/viewModels';
+import { useMediaQuery } from '@/utils/useMediaQuery';
+import {
+  APPROVAL_STATE_LABEL,
+  alertReading,
+  approvalState,
+  metricForEvent,
+  severityRank,
+  STAGE_GROUP_LABEL,
+  stageGroup,
+  type ApprovalState,
+  type StageGroup,
+} from '@/features/events/eventsView';
+import { formatDateTimeShort, formatDuration, formatTimeHM } from '@/utils/formatTime';
+import styles from '@/features/events/events.module.css';
 
 const SEVERITY_OPTIONS = [
   { value: 'all', label: '全部等级' },
@@ -28,96 +42,265 @@ const SEVERITY_OPTIONS = [
   { value: 'notice', label: '提示' },
 ];
 
-const STAGE_OPTIONS = [
-  { value: 'all', label: '全部状态' },
-  { value: 'detected', label: '待诊断' },
-  { value: 'awaitingApproval', label: '待审批' },
+const STAGE_OPTIONS: { value: StageGroup | 'all'; label: string }[] = [
+  { value: 'all', label: '全部阶段' },
+  { value: 'detected', label: '待响应' },
+  { value: 'analyzing', label: '分析中' },
+  { value: 'approval', label: '待审批' },
   { value: 'executing', label: '执行中' },
   { value: 'recovered', label: '已恢复' },
+  { value: 'abnormal', label: '异常中断' },
 ];
 
-const SORT_OPTIONS = [
-  { value: 'newest', label: '最新优先' },
-  { value: 'severity', label: '严重程度' },
-  { value: 'duration', label: '持续时长' },
+const APPROVAL_OPTIONS: { value: ApprovalState | 'all'; label: string }[] = [
+  { value: 'all', label: '全部审批状态' },
+  { value: 'pending', label: '待审批' },
+  { value: 'approved', label: '已批准' },
+  { value: 'rejected', label: '已驳回' },
 ];
 
-const SEV_RANK: Record<Severity, number> = { emergency: 4, critical: 3, warning: 2, notice: 1 };
+function stageTone(group: StageGroup): TagTone {
+  const tones: Record<StageGroup, TagTone> = {
+    detected: 'danger',
+    analyzing: 'info',
+    approval: 'warning',
+    executing: 'accent',
+    recovered: 'success',
+    abnormal: 'danger',
+  };
+  return tones[group];
+}
+
+function approvalTone(state: ApprovalState): TagTone {
+  if (state === 'pending') return 'warning';
+  if (state === 'approved') return 'success';
+  if (state === 'rejected') return 'danger';
+  return 'neutral';
+}
+
+type AlertSortKey = 'severity' | 'reading' | 'started' | 'duration' | 'stage';
+
+/** 阶段排序权重：越靠前越紧急（待响应 > 分析中 > 待审批 > 执行中 > 已恢复 > 异常中断）。 */
+const STAGE_SORT_ORDER: Record<StageGroup, number> = {
+  detected: 0,
+  analyzing: 1,
+  approval: 2,
+  executing: 3,
+  recovered: 4,
+  abnormal: 5,
+};
+
+/** 排序取值；读数缺失返回 null（排序时恒排最后）。 */
+function alertSortValue(
+  event: AnomalyEventSummary,
+  key: AlertSortKey,
+  rooms: Record<string, RoomBundle>,
+): number | null {
+  switch (key) {
+    case 'severity':
+      return severityRank(event.severity);
+    case 'reading': {
+      const metric = metricForEvent(event);
+      const series = rooms[event.roomId]?.telemetry.find((s) => s.metric === metric);
+      return latestValue(series);
+    }
+    case 'started':
+      return Date.parse(event.startedAt);
+    case 'duration':
+      return event.durationMinutes;
+    case 'stage':
+      return STAGE_SORT_ORDER[stageGroup(event.stage)];
+  }
+}
 
 export default function EventsPage() {
   const navigate = useNavigate();
-  const { events, rooms, loading, online, lastUpdated } = useAppData();
+  const { events, rooms, loading, error, online, lastUpdated, reload } = useAppData();
+
   const [query, setQuery] = useState('');
   const [severity, setSeverity] = useState('all');
   const [roomFilter, setRoomFilter] = useState('all');
-  const [stageFilter, setStageFilter] = useState('all');
-  const [pendingOnly, setPendingOnly] = useState<'all' | 'pending'>('all');
-  const [sort, setSort] = useState('newest');
+  const [stageFilter, setStageFilter] = useState<StageGroup | 'all'>('all');
+  const [approvalFilter, setApprovalFilter] = useState<ApprovalState | 'all'>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [openOnly, setOpenOnly] = useState(false);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<AlertSortKey>('started');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  // ≤1280px 时详情改为右侧 Drawer（任务书响应式要求）。
+  const inspectorAsDrawer = useMediaQuery('(max-width: 1280px)');
 
-  const roomOptions = [{ value: 'all', label: '全部冷库' }, ...Object.values(rooms).map((b) => ({ value: b.room.id, label: b.room.name }))];
+  const handleSort = (columnKey: string) => {
+    const nextKey = columnKey as AlertSortKey;
+    if (nextKey === sortKey) {
+      setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(nextKey);
+      setSortDirection('desc');
+    }
+  };
+
+  const roomOptions = [
+    { value: 'all', label: '全部库房' },
+    ...Object.values(rooms).map((b) => ({ value: b.room.id, label: b.room.name })),
+  ];
 
   const filtered = useMemo(() => {
     let list = [...events];
     if (query) {
-      const q = query.toLowerCase();
-      list = list.filter((e) => e.title.toLowerCase().includes(q) || e.roomName.toLowerCase().includes(q));
+      const keyword = query.toLowerCase();
+      list = list.filter(
+        (event) =>
+          event.title.toLowerCase().includes(keyword) ||
+          event.roomName.toLowerCase().includes(keyword) ||
+          event.type.toLowerCase().includes(keyword),
+      );
     }
-    if (severity !== 'all') list = list.filter((e) => e.severity === severity);
-    if (roomFilter !== 'all') list = list.filter((e) => e.roomId === roomFilter);
-    if (stageFilter !== 'all') list = list.filter((e) => e.stage === stageFilter);
-    if (pendingOnly === 'pending') list = list.filter((e) => e.awaitingApproval);
+    if (severity !== 'all') list = list.filter((event) => event.severity === severity);
+    if (roomFilter !== 'all') list = list.filter((event) => event.roomId === roomFilter);
+    if (stageFilter !== 'all') list = list.filter((event) => stageGroup(event.stage) === stageFilter);
+    if (approvalFilter !== 'all') list = list.filter((event) => approvalState(event) === approvalFilter);
+    if (startDate) list = list.filter((event) => event.startedAt.slice(0, 10) >= startDate);
+    if (endDate) list = list.filter((event) => event.startedAt.slice(0, 10) <= endDate);
+    if (openOnly) list = list.filter((event) => event.stage !== 'recovered');
+    const directionFactor = sortDirection === 'asc' ? 1 : -1;
     list.sort((a, b) => {
-      if (sort === 'severity') return SEV_RANK[b.severity] - SEV_RANK[a.severity];
-      if (sort === 'duration') return b.durationMinutes - a.durationMinutes;
-      return Date.parse(b.startedAt) - Date.parse(a.startedAt);
+      const valueA = alertSortValue(a, sortKey, rooms);
+      const valueB = alertSortValue(b, sortKey, rooms);
+      if (valueA === null && valueB === null) return 0;
+      if (valueA === null) return 1;
+      if (valueB === null) return -1;
+      if (valueA !== valueB) return (valueA - valueB) * directionFactor;
+      return Date.parse(b.startedAt) - Date.parse(a.startedAt); // 同值按最新触发在前
     });
     return list;
-  }, [events, query, severity, roomFilter, stageFilter, pendingOnly, sort]);
+  }, [events, rooms, query, severity, roomFilter, stageFilter, approvalFilter, startDate, endDate, openOnly, sortKey, sortDirection]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const selected = filtered.find((e) => e.id === selectedId) ?? null;
+  const pageRows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const selected = filtered.find((event) => event.id === selectedId) ?? null;
+
+  // 宽屏侧栏模式：默认选中第一条（参考图首行高亮）；筛选后保持有效选中。
+  // 窄屏 Drawer 模式：不自动选中（避免 Drawer 被强制打开/关不掉），仅清理失效选中。
+  useEffect(() => {
+    const selectionValid = selectedId !== null && filtered.some((event) => event.id === selectedId);
+    if (inspectorAsDrawer) {
+      if (selectedId !== null && !selectionValid) setSelectedId(null);
+      return;
+    }
+    if (filtered.length === 0) {
+      if (selectedId !== null) setSelectedId(null);
+      return;
+    }
+    if (!selectionValid) setSelectedId(filtered[0].id);
+  }, [filtered, selectedId, inspectorAsDrawer]);
 
   const resetPage = () => setPage(1);
 
   const columns: TableColumn<AnomalyEventSummary>[] = [
-    { key: 'severity', header: '等级', width: '70px', render: (row) => <SeverityTag severity={row.severity} /> },
-    { key: 'title', header: '异常', render: (row) => row.title },
-    { key: 'room', header: '冷库', width: '110px', render: (row) => row.roomName },
-    { key: 'type', header: '类型', width: '80px', render: (row) => (row.type === 'temperature' ? '温度' : '湿度') },
+    { key: 'severity', header: '等级', width: '76px', sortable: true, render: (row) => <SeverityTag severity={row.severity} /> },
     {
-      key: 'stage',
-      header: '状态',
-      width: '120px',
+      key: 'title',
+      header: '告警内容',
       render: (row) => (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <StatusBadge status={row.stage} size="sm" />
-          {row.awaitingApproval && <Tag tone="warning">待审批</Tag>}
+        <span className={styles.alertTitle}>
+          <span className={styles.alertTitleMain}>{row.title}</span>
+          <span className={styles.alertTitleSub}>{row.roomName}</span>
         </span>
       ),
     },
-    { key: 'duration', header: '持续', width: '76px', align: 'right', render: (row) => formatDuration(row.durationMinutes) },
-    { key: 'started', header: '首次发现', width: '130px', render: (row) => formatDateTime(row.startedAt) },
+    { key: 'room', header: '库房', width: '96px', render: (row) => row.roomName },
+    {
+      key: 'reading',
+      header: '当前读数',
+      width: '96px',
+      align: 'right',
+      sortable: true,
+      render: (row) => {
+        const reading = alertReading(row, rooms[row.roomId]);
+        return (
+          <span className={`numeric ${reading.outOfRange ? styles.readingOut : ''}`}>{reading.valueText}</span>
+        );
+      },
+    },
+    {
+      key: 'target',
+      header: '目标范围',
+      width: '104px',
+      render: (row) => {
+        const reading = alertReading(row, rooms[row.roomId]);
+        return (
+          <span className="numeric" title={reading.targetFromBackend ? undefined : '经验参考区间（非后端下发）'}>
+            {reading.targetText}
+            {reading.targetFromBackend ? '' : ' *'}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'started',
+      header: '开始时间',
+      width: '108px',
+      sortable: true,
+      render: (row) => <span className="numeric">{formatDateTimeShort(row.startedAt)}</span>,
+    },
+    {
+      key: 'duration',
+      header: '持续时长',
+      width: '84px',
+      align: 'right',
+      sortable: true,
+      render: (row) => formatDuration(row.durationMinutes),
+    },
+    {
+      key: 'stage',
+      header: '当前阶段',
+      width: '88px',
+      sortable: true,
+      render: (row) => <Tag tone={stageTone(stageGroup(row.stage))}>{STAGE_GROUP_LABEL[stageGroup(row.stage)]}</Tag>,
+    },
+    {
+      key: 'approval',
+      header: '审批状态',
+      width: '84px',
+      render: (row) => {
+        const state = approvalState(row);
+        return state === 'none' ? <span className={styles.alertTitleSub}>—</span> : <Tag tone={approvalTone(state)}>{APPROVAL_STATE_LABEL[state]}</Tag>;
+      },
+    },
+    {
+      key: 'owner',
+      header: '责任人',
+      width: '72px',
+      render: () => (
+        <span className={styles.alertTitleSub} title="责任人模块待接入用户权限系统">
+          —
+        </span>
+      ),
+    },
     {
       key: 'actions',
       header: '操作',
-      width: '180px',
+      width: '150px',
       render: (row) => (
         <div className={styles.rowActions}>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedId(row.id)}>
+            查看
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => navigate(`/workbench/${row.id}`)}>
-            进入诊断
+            处理
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            disabled={row.stage !== 'recovered'}
-            title={row.stage !== 'recovered' ? '报告将在恢复后生成' : undefined}
-            onClick={() => navigate('/reports')}
+            title="进入 Agent 对话与诊断分析"
+            onClick={() => navigate(`/workbench/${row.id}?view=agent`)}
           >
-            查看报告
+            诊断
           </Button>
         </div>
       ),
@@ -128,108 +311,110 @@ export default function EventsPage() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <SkeletonLoader lines={2} />
+        <SkeletonLoader lines={2} />
         <SkeletonLoader lines={6} />
       </div>
     );
+  }
+  if (error && events.length === 0) {
+    return <ErrorState title="告警数据加载失败" description={error} onRetry={() => void reload()} />;
   }
 
   return (
     <div className={styles.page}>
       <PageHeader
-        title="异常事件"
-        description="异常事件的检索、筛选与处理入口"
+        title="异常告警"
+        description="实时监控异常状态，快速响应并闭环处理，保障冷库安全稳定运行。"
         actions={<DemoDataBadge kind="demo" />}
       />
 
-      {!online && <OfflineState lastUpdated={lastUpdated ? formatDateTime(lastUpdated) : undefined} />}
+      {!online && <OfflineState lastUpdated={lastUpdated ? formatTimeHM(lastUpdated) : undefined} />}
 
-      <div className={styles.toolbar}>
+      <AlertKpiCards events={events} />
+
+      <div className={styles.filterBar}>
         <div className={styles.searchBox}>
-          <Search value={query} onChange={setQuery} placeholder="搜索异常或冷库" />
+          <Search value={query} onChange={(v) => { setQuery(v); resetPage(); }} placeholder="搜索告警内容、库房或设备" />
         </div>
-        <Select ariaLabel="等级" options={SEVERITY_OPTIONS} value={severity} onChange={(v) => { setSeverity(v); resetPage(); }} />
-        <Select ariaLabel="冷库" options={roomOptions} value={roomFilter} onChange={(v) => { setRoomFilter(v); resetPage(); }} />
-        <Select ariaLabel="状态" options={STAGE_OPTIONS} value={stageFilter} onChange={(v) => { setStageFilter(v); resetPage(); }} />
-        <Segmented
-          options={[{ value: 'all', label: '全部' }, { value: 'pending', label: '待审批' }]}
-          value={pendingOnly}
-          onChange={(v) => { setPendingOnly(v as 'all' | 'pending'); resetPage(); }}
-          ariaLabel="待审批筛选"
-        />
-        <span className={styles.toolbarSpacer} />
-        <Select ariaLabel="排序" options={SORT_OPTIONS} value={sort} onChange={setSort} />
+        <Select ariaLabel="告警等级" options={SEVERITY_OPTIONS} value={severity} onChange={(v) => { setSeverity(v); resetPage(); }} />
+        <Select ariaLabel="库房" options={roomOptions} value={roomFilter} onChange={(v) => { setRoomFilter(v); resetPage(); }} />
+        <Select ariaLabel="阶段" options={STAGE_OPTIONS} value={stageFilter} onChange={(v) => { setStageFilter(v as StageGroup | 'all'); resetPage(); }} />
+        <Select ariaLabel="审批状态" options={APPROVAL_OPTIONS} value={approvalFilter} onChange={(v) => { setApprovalFilter(v as ApprovalState | 'all'); resetPage(); }} />
+        <span className={styles.dateField}>
+          <input
+            type="date"
+            className={styles.dateInput}
+            value={startDate}
+            aria-label="开始日期"
+            onChange={(e) => { setStartDate(e.target.value); resetPage(); }}
+          />
+        </span>
+        <span className={styles.dateField}>
+          <input
+            type="date"
+            className={styles.dateInput}
+            value={endDate}
+            aria-label="结束日期"
+            onChange={(e) => { setEndDate(e.target.value); resetPage(); }}
+          />
+        </span>
+        <label className={styles.checkField}>
+          <input
+            type="checkbox"
+            checked={openOnly}
+            onChange={(e) => { setOpenOnly(e.target.checked); resetPage(); }}
+          />
+          仅看未处理
+        </label>
       </div>
 
       <div className={styles.layout}>
         <Panel flush>
-          {filtered.length === 0 ? (
-            <EmptyState title="没有匹配的异常事件" description="尝试调整筛选条件。" />
-          ) : (
-            <>
+          <div className={styles.tableWrap}>
+            {filtered.length === 0 ? (
+              <div style={{ padding: 'var(--space-4)' }}>
+                <EmptyState title="没有匹配的告警" description="尝试调整筛选条件。" />
+              </div>
+            ) : (
               <Table
                 columns={columns}
                 rows={pageRows}
                 rowKey={(row) => row.id}
                 onRowClick={(row) => setSelectedId(row.id)}
                 isRowSelected={(row) => row.id === selectedId}
-                rowLabel={(row) => `异常 ${row.title}`}
+                rowLabel={(row) => `告警 ${row.title}`}
+                sortKey={sortKey}
+                sortDirection={sortDirection}
+                onSort={handleSort}
+                minWidth={1180}
               />
-              <div className={styles.pager} style={{ padding: '0 16px' }}>
-                <span className={styles.pagerInfo}>
-                  共 {filtered.length} 条 · 第 {safePage} / {totalPages} 页
-                </span>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Button variant="secondary" size="sm" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-                    上一页
-                  </Button>
-                  <Button variant="secondary" size="sm" disabled={safePage >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
-                    下一页
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
+            )}
+            <div className={styles.pagerBar}>
+              <Pagination
+                total={filtered.length}
+                page={safePage}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
+              />
+            </div>
+          </div>
         </Panel>
 
-        <Panel title="事件详情">
-          {selected ? (
-            <div className={styles.detailPanel}>
-              <div className={styles.detailTitle}>
-                <SeverityTag severity={selected.severity} />
-                {selected.title}
-              </div>
-              <div className={styles.detailMeta}>
-                <span>{selected.roomName}</span>
-                <span>{selected.type === 'temperature' ? '温度' : '湿度'}异常</span>
-                <span>持续 {formatDuration(selected.durationMinutes)}</span>
-              </div>
-              <div className={styles.detailMeta}>
-                <span>发现 {formatDateTime(selected.startedAt)}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <StatusBadge status={selected.stage} />
-                {selected.awaitingApproval && <Tag tone="warning">待 L2 人工审批</Tag>}
-              </div>
-              <div className={styles.detailActions}>
-                <Button variant="primary" size="md" onClick={() => navigate(`/workbench/${selected.id}`)}>
-                  进入诊断工作台
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="md"
-                  disabled={selected.stage !== 'recovered'}
-                  title={selected.stage !== 'recovered' ? '报告将在恢复后生成' : undefined}
-                  onClick={() => navigate('/reports')}
-                >
-                  查看报告
-                </Button>
-              </div>
-              <p className={styles.detailMeta}>分配负责人：待接入用户权限模块后提供（当前仅浏览）。</p>
-            </div>
-          ) : (
-            <EmptyState title="选择一条事件" description="点击列表中的事件查看详情与处理入口。" />
-          )}
-        </Panel>
+        {inspectorAsDrawer ? (
+          <Drawer open={selected !== null} title="告警详情" onClose={() => setSelectedId(null)} width={400}>
+            {selected && <AlertDetailContent event={selected} bundle={rooms[selected.roomId]} />}
+          </Drawer>
+        ) : (
+          <AlertDetailPanel
+            event={selected}
+            bundle={selected ? rooms[selected.roomId] : undefined}
+            onClose={() => setSelectedId(null)}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,95 @@
+/* 能耗分析页样式（KPI / 趋势与分布 / 节能效果 / 洞察）。 */
+
+.page { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.kpiGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
+.kpiCard {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  background: var(--bg-surface);
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+.kpiIcon {
+  width: 40px; height: 40px; border-radius: var(--radius-md);
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  background: var(--color-accent-subtle); color: var(--color-accent);
+}
+.kpiBody { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kpiLabel { font-size: var(--text-caption); color: var(--color-text-secondary); }
+.kpiValue { font-size: 22px; line-height: 28px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+.kpiValue small { font-size: var(--text-caption); font-weight: var(--font-weight-regular); color: var(--color-text-muted); margin-left: 3px; }
+.kpiSub { font-size: var(--text-micro); color: var(--color-text-muted); display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.kpiDeltaUp { color: var(--color-danger); }
+.kpiDeltaDown { color: var(--color-accent); }
+
+.gridRow { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: var(--space-4); align-items: stretch; }
+.gridRow > * { min-width: 0; }
+
+/* ---------- 环图 ---------- */
+.donutWrap { display: flex; align-items: center; gap: var(--space-4); }
+.donutChart { position: relative; width: 132px; flex-shrink: 0; }
+.donutCenter {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+}
+.donutValue { font-size: 17px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+.donutLabel { font-size: var(--text-micro); color: var(--color-text-muted); }
+.donutList { list-style: none; margin: 0; padding: 0; flex: 1; display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.donutItem { display: flex; align-items: center; gap: 6px; font-size: var(--text-caption); }
+.donutDot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.donutName { color: var(--color-text-secondary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.donutPct { color: var(--color-text-primary); font-weight: var(--font-weight-medium); width: 44px; text-align: right; }
+.donutKwh { color: var(--color-text-muted); width: 68px; text-align: right; }
+
+/* ---------- 库间对比 ---------- */
+.roomBars { display: flex; flex-direction: column; gap: var(--space-3); }
+.roomBarRow { display: grid; grid-template-columns: 1fr 130px 64px; align-items: center; gap: var(--space-3); font-size: var(--text-caption); }
+.roomBarName { color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barTrack { height: 8px; border-radius: 4px; background: var(--color-neutral-200); overflow: hidden; }
+.barFill { height: 100%; border-radius: 4px; }
+.roomBarValue { text-align: right; color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+
+/* ---------- 节能效果 ---------- */
+.savingsTable { width: 100%; border-collapse: collapse; font-size: var(--text-caption); }
+.savingsTable th {
+  text-align: left; color: var(--color-text-secondary); font-weight: var(--font-weight-medium);
+  padding: var(--space-2); border-bottom: var(--border-hairline) solid var(--color-border-subtle);
+  background: var(--bg-subtle); white-space: nowrap;
+}
+.savingsTable td { padding: var(--space-2); border-bottom: var(--border-hairline) solid var(--color-border-subtle); color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+.savingsTable tr:last-child td { border-bottom: none; }
+.savingsGood { color: var(--color-accent); font-weight: var(--font-weight-semibold); }
+
+/* ---------- 洞察 ---------- */
+.insightList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.insightItem { display: flex; gap: var(--space-2); font-size: var(--text-caption); color: var(--color-text-secondary); line-height: 1.55; }
+.insightDot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-accent); margin-top: 6px; flex-shrink: 0; }
+.topDeviceRow { display: grid; grid-template-columns: 1fr 100px 72px 44px; align-items: center; gap: var(--space-2); font-size: var(--text-caption); padding: 4px 0; }
+.topDeviceName { color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topDeviceValue { text-align: right; color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+.topDevicePct { text-align: right; color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.suggestBox {
+  margin-top: var(--space-3);
+  border: 1px solid rgba(15, 169, 120, 0.3);
+  background: var(--color-accent-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  font-size: var(--text-caption); color: var(--color-text-secondary); line-height: 1.6;
+}
+
+.note { font-size: var(--text-micro); color: var(--color-text-muted); line-height: 1.6; }
+.disclaimer {
+  border-top: var(--border-hairline) solid var(--color-border-subtle);
+  padding-top: var(--space-3);
+  font-size: var(--text-micro); color: var(--color-text-muted); line-height: 1.7;
+}
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 1440px) {
+  .gridRow { grid-template-columns: 1.2fr 1fr 1fr; }
+}
+@media (max-width: 1280px) {
+  .kpiGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gridRow { grid-template-columns: 1fr; }
+}

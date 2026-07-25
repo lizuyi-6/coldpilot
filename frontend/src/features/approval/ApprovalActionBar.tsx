@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/Button';
 import { Check, FlaskConical, Play, ThumbsDown, ThumbsUp } from 'lucide-react';
 import type { UseWorkbench } from '@/state/useWorkbench';
-import styles from '../inspector/inspector.module.css';
+import styles from './approval.module.css';
 
 interface ApprovalActionBarProps {
   wb: UseWorkbench;

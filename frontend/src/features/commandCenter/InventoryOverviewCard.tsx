@@ -38,12 +38,10 @@ export function InventoryOverviewCard({ inventory }: InventoryOverviewCardProps)
   /* SVG 圆环分段。 */
   const R = 34;
   const C = 2 * Math.PI * R;
-  let offset = 0;
-  const arcs = slices.map((slice) => {
+  const cumulativeLengths = slices.map((_, index) => slices.slice(0, index).reduce((sum, slice) => sum + (slice.pct / 100) * C, 0));
+  const arcs = slices.map((slice, index) => {
     const len = (slice.pct / 100) * C;
-    const arc = { ...slice, dasharray: `${Math.max(0, len - 1.5)} ${C - len + 1.5}`, dashoffset: -offset };
-    offset += len;
-    return arc;
+    return { ...slice, dasharray: `${Math.max(0, len - 1.5)} ${C - len + 1.5}`, dashoffset: -cumulativeLengths[index] };
   });
 
   return (

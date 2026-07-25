@@ -9,3 +9,17 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
   }
   globalThis.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver;
 }
+
+// jsdom 不提供 matchMedia（响应式 hook 依赖），stub 为恒不匹配（等价桌面宽屏）。
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener() {},
+    removeListener() {},
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+}

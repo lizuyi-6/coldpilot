@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Bell, ChevronsLeft, ChevronsRight, Droplets, Snowflake, Sun } from 'lucide-react';
+import { Bell, ChevronsLeft, ChevronsRight, Droplets, Sun } from 'lucide-react';
 import { NAV_ITEMS } from '@/app/navigation';
 import { useAlertCount, useAppData } from '@/state/appData';
 import { DemoDataBadge } from '@/components/domain/DemoDataBadge';
@@ -9,9 +9,8 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { StatusDot } from '@/components/ui/StatusDot';
 import { Select } from '@/components/ui/Select';
 import { useMediaQuery } from '@/utils/useMediaQuery';
+import { NAV_COLLAPSE_KEY, UI_PREFS_EVENT } from '@/utils/uiPrefs';
 import styles from './AppShell.module.css';
-
-const COLLAPSE_KEY = 'coldpilot.nav.collapsed';
 
 /** 顶部栏时钟（演示叙事按 UTC 渲染）。 */
 function useUtcClock(): string {
@@ -33,7 +32,7 @@ export function AppShell() {
 
   const [collapsedPref, setCollapsedPref] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(COLLAPSE_KEY) === '1';
+      return localStorage.getItem(NAV_COLLAPSE_KEY) === '1';
     } catch {
       return false;
     }
@@ -43,13 +42,32 @@ export function AppShell() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(COLLAPSE_KEY, collapsedPref ? '1' : '0');
+      localStorage.setItem(NAV_COLLAPSE_KEY, collapsedPref ? '1' : '0');
     } catch {
       /* ignore */
     }
   }, [collapsedPref]);
 
+  // 系统管理页「导航栏折叠」开关修改同一偏好时即时同步。
+  useEffect(() => {
+    const syncFromPrefs = () => {
+      try {
+        setCollapsedPref(localStorage.getItem(NAV_COLLAPSE_KEY) === '1');
+      } catch {
+        /* ignore */
+      }
+    };
+    window.addEventListener(UI_PREFS_EVENT, syncFromPrefs);
+    return () => window.removeEventListener(UI_PREFS_EVENT, syncFromPrefs);
+  }, []);
+
   const roomOptions = Object.values(rooms).map((b) => ({ value: b.room.id, label: b.room.name }));
+
+  const brandMark = (
+    <span className={styles.brandIcon}>
+      <img src="/logo.png" alt="鲜知 ColdPilot" className={styles.brandLogo} />
+    </span>
+  );
 
   return (
     <div className={styles.shell}>
@@ -58,9 +76,7 @@ export function AppShell() {
         aria-label="全局导航"
       >
         <div className={styles.brand}>
-          <span className={styles.brandIcon}>
-            <Snowflake size={20} strokeWidth={2} />
-          </span>
+          {collapsed ? <Tooltip content="鲜知 ColdPilot">{brandMark}</Tooltip> : brandMark}
           <span className={styles.brandText}>
             <span className={styles.brandName}>鲜知 ColdPilot</span>
             <span className={styles.brandSub}>智能冷库工业智能体</span>

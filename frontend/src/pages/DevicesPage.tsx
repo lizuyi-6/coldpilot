@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react';
-import type { Device, DeviceKind } from '@/domain/types';
+import { Activity, AlertTriangle, Cpu, Wrench } from 'lucide-react';
+import type { Device } from '@/domain/types';
 import { useAppData } from '@/state/appData';
 import { deviceStatusLabel, deviceStatusTone } from '@/domain/viewModels';
+import { DEVICE_KIND_ICON, DEVICE_KIND_LABEL } from '@/components/domain/deviceMeta';
+import { useMediaQuery } from '@/utils/useMediaQuery';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Panel } from '@/components/ui/Panel';
 import { Table, type TableColumn } from '@/components/ui/Table';
@@ -10,24 +13,19 @@ import { Select } from '@/components/ui/Select';
 import { StatusDot } from '@/components/ui/StatusDot';
 import { Tag } from '@/components/ui/Tag';
 import { Drawer } from '@/components/ui/Drawer';
-import { DescriptionList } from '@/components/ui/DescriptionList';
-import { InlineAlert } from '@/components/ui/InlineAlert';
+import { Pagination } from '@/components/ui/Pagination';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { OfflineState } from '@/components/ui/OfflineState';
 import { DemoDataBadge } from '@/components/domain/DemoDataBadge';
-import { Zap, Fan, SlidersHorizontal, DoorClosed, Gauge } from 'lucide-react';
-import styles from './DevicesPage.module.css';
+import { DeviceDetailPanel } from '@/features/devices/DeviceDetailPanel';
+import { deviceHealth, deviceKpi, deviceMetricEntries, HEALTH_META, maintenanceAdvice } from '@/features/devices/devicesView';
+import styles from '@/features/devices/devices.module.css';
 
-const KIND_META: Record<DeviceKind, { label: string; Icon: typeof Zap }> = {
-  compressor: { label: '压缩机', Icon: Zap },
-  fan: { label: '风机', Icon: Fan },
-  valve: { label: '阀门', Icon: SlidersHorizontal },
-  door: { label: '库门', Icon: DoorClosed },
-  meter: { label: '电表', Icon: Gauge },
-};
-
-const KIND_OPTIONS = [{ value: 'all', label: '全部类型' }, ...Object.entries(KIND_META).map(([value, m]) => ({ value, label: m.label }))];
+const KIND_OPTIONS = [
+  { value: 'all', label: '全部类型' },
+  ...Object.entries(DEVICE_KIND_LABEL).map(([value, label]) => ({ value, label })),
+];
 const STATUS_OPTIONS = [
   { value: 'all', label: '全部状态' },
   { value: 'running', label: '运行中' },
@@ -36,99 +34,104 @@ const STATUS_OPTIONS = [
   { value: 'offline', label: '离线' },
 ];
 
-/** 维护建议（只读，基于设备类型与状态）。 */
-function maintenanceAdvice(device: Device): string[] {
-  const advice: string[] = [];
-  if (device.status === 'fault') advice.push('设备故障，需人工检修后方可恢复自动运行。');
-  if (device.status === 'offline') advice.push('设备离线，请检查供电与通讯链路。');
-  if (device.kind === 'compressor') {
-    const eff = device.metrics?.efficiencyPct;
-    if (eff !== undefined && eff < 80) advice.push(`压缩机效率 ${eff}% 偏低，建议检查制冷剂充注量与冷凝器清洁度。`);
-    const dt = device.metrics?.dischargeTempC;
-    if (dt !== undefined && dt > 90) advice.push(`排气温度 ${dt}℃ 偏高，建议检查油位与冷却。`);
-    advice.push('建议按计划巡检压缩机油位、皮带与振动。');
-  }
-  if (device.kind === 'fan') advice.push('建议定期清理风机叶片积霜，检查轴承润滑。');
-  if (device.kind === 'door') advice.push('建议检查库门密封条完整性，减少冷气泄漏。');
-  if (device.kind === 'valve') advice.push('建议校验膨胀阀开度与感温包。');
-  if (device.kind === 'meter') advice.push('电表用于能耗计量，建议定期校验精度。');
-  if (advice.length === 0) advice.push('设备运行正常，按计划例行巡检。');
-  return advice;
-}
+const PAGE_SIZE = 10;
 
+/** 设备管理页：汇总 KPI + 筛选 + 设备表 + 右侧详情（≤1280px 详情转 Drawer）。 */
 export default function DevicesPage() {
-  const { rooms, loading, roomId, setRoomId, online, lastUpdated } = useAppData();
+  const { rooms, loading, roomId, online, lastUpdated, events } = useAppData();
   const bundle = rooms[roomId];
   const room = bundle?.room;
-  const devices = bundle?.devices ?? [];
+  const devices = useMemo(() => bundle?.devices ?? [], [bundle]);
+  const isCompact = useMediaQuery('(max-width: 1280px)');
+
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('all');
   const [status, setStatus] = useState('all');
+  const [alarmOnly, setAlarmOnly] = useState(false);
+  const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Device | null>(null);
 
-  const roomOptions = Object.values(rooms).map((b) => ({ value: b.room.id, label: b.room.name }));
+  const kpi = useMemo(() => deviceKpi(devices), [devices]);
+  const roomEvents = useMemo(() => events.filter((event) => event.roomId === roomId), [events, roomId]);
 
   const filtered = useMemo(
     () =>
-      devices.filter((d) => {
-        if (query && !d.name.toLowerCase().includes(query.toLowerCase())) return false;
-        if (kind !== 'all' && d.kind !== kind) return false;
-        if (status !== 'all' && d.status !== status) return false;
+      devices.filter((device) => {
+        if (query && !device.name.toLowerCase().includes(query.toLowerCase()) && !device.id.toLowerCase().includes(query.toLowerCase())) return false;
+        if (kind !== 'all' && device.kind !== kind) return false;
+        if (status !== 'all' && device.status !== status) return false;
+        if (alarmOnly && device.status !== 'fault' && device.status !== 'offline') return false;
         return true;
       }),
-    [devices, query, kind, status],
+    [devices, query, kind, status, alarmOnly],
   );
 
-  const faultCount = devices.filter((d) => d.status === 'fault' || d.status === 'offline').length;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  // 默认选中首台设备（宽屏右栏展示）；筛选变化时同步选中项。
+  const effectiveSelected = selected && filtered.some((device) => device.id === selected.id) ? selected : filtered[0] ?? null;
 
   const columns: TableColumn<Device>[] = [
     {
       key: 'name',
-      header: '设备',
+      header: '设备名称',
       render: (row) => {
-        const meta = KIND_META[row.kind];
-        const Icon = meta.Icon;
+        const KindIcon = DEVICE_KIND_ICON[row.kind];
         return (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <Icon size={15} style={{ color: 'var(--color-text-muted)' }} />
-            {row.name}
+          <span className={styles.deviceNameCell}>
+            <KindIcon size={16} aria-hidden style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
+            <span className={styles.deviceNameText}>
+              <b>{row.name}</b>
+              <small>{row.id}</small>
+            </span>
           </span>
         );
       },
     },
-    { key: 'kind', header: '类型', width: '90px', render: (row) => KIND_META[row.kind].label },
+    { key: 'kind', header: '类型', width: '100px', render: (row) => DEVICE_KIND_LABEL[row.kind] },
     {
       key: 'status',
-      header: '状态',
+      header: '当前状态',
       width: '100px',
       render: (row) => (
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
           <StatusDot tone={deviceStatusTone(row.status)} />
           {deviceStatusLabel(row.status)}
         </span>
       ),
     },
     {
-      key: 'metric',
+      key: 'metrics',
       header: '关键指标',
       render: (row) => {
-        const entries = Object.entries(row.metrics ?? {});
+        const entries = deviceMetricEntries(row).slice(0, 2);
         if (entries.length === 0) return <span className={styles.note}>—</span>;
-        const [k, v] = entries[0];
         return (
-          <span>
-            {k} <strong>{v}</strong>
+          <span className={styles.metricCell}>
+            {entries.map((metric) => (
+              <span key={metric.key} className={styles.metricCellRow}>
+                {metric.label} <b>{metric.value.toLocaleString('zh-CN')}{metric.unit}</b>
+              </span>
+            ))}
           </span>
         );
       },
     },
     {
+      key: 'health',
+      header: '健康状态',
+      width: '90px',
+      render: (row) => {
+        const health = deviceHealth(row);
+        return <Tag tone={HEALTH_META[health].tone}>{HEALTH_META[health].label}</Tag>;
+      },
+    },
+    {
       key: 'advice',
       header: '维护建议',
-      render: (row) => {
-        const first = maintenanceAdvice(row)[0];
-        return <span className={styles.note}>{first}</span>;
-      },
+      render: (row) => <span className={styles.note}>{maintenanceAdvice(row)[0]}</span>,
     },
   ];
 
@@ -144,85 +147,111 @@ export default function DevicesPage() {
     return <EmptyState title="暂无设备数据" description="当前冷库没有设备信息。" />;
   }
 
+  const detailPanel = effectiveSelected ? (
+    <DeviceDetailPanel
+      device={effectiveSelected}
+      roomName={room.name}
+      roomEvents={roomEvents}
+      onClose={() => setSelected(null)}
+    />
+  ) : null;
+
   return (
     <div className={styles.page}>
       <PageHeader
         title="设备管理"
-        description={`${room.name} · 制冷 / 通风 / 阀件 / 库门 / 计量设备`}
+        description={`${room.name} · 设备运行监控、状态管理与维护建议`}
         actions={<DemoDataBadge kind="demo" />}
       />
 
       {!online && <OfflineState lastUpdated={lastUpdated ?? undefined} />}
 
-      <div className={styles.toolbar}>
-        <div style={{ width: 200 }}>
-          <Search value={query} onChange={setQuery} placeholder="搜索设备" />
+      {/* 汇总 */}
+      <div className={styles.kpiGrid}>
+        <div className={styles.kpiCard}>
+          <span className={styles.kpiIcon}><Cpu size={19} aria-hidden /></span>
+          <span className={styles.kpiBody}>
+            <span className={styles.kpiLabel}>设备总数</span>
+            <span className={styles.kpiValue}>{kpi.total}<small>台</small></span>
+          </span>
         </div>
-        <Select ariaLabel="冷库" options={roomOptions} value={roomId} onChange={setRoomId} />
-        <Select ariaLabel="类型" options={KIND_OPTIONS} value={kind} onChange={setKind} />
-        <Select ariaLabel="状态" options={STATUS_OPTIONS} value={status} onChange={setStatus} />
-        <span className={styles.toolbarSpacer} />
-        {faultCount > 0 && <Tag tone="danger">{faultCount} 台需关注</Tag>}
-        <Tag tone="neutral">{devices.length} 台设备</Tag>
+        <div className={styles.kpiCard}>
+          <span className={styles.kpiIcon}><Activity size={19} aria-hidden /></span>
+          <span className={styles.kpiBody}>
+            <span className={styles.kpiLabel}>在线设备</span>
+            <span className={styles.kpiValue}>{kpi.online}<small>台</small></span>
+            <span className={styles.kpiSub}>{kpi.onlinePct}%</span>
+          </span>
+        </div>
+        <div className={styles.kpiCard}>
+          <span className={`${styles.kpiIcon} ${kpi.alarm > 0 ? styles.kpiIconWarn : ''}`}><AlertTriangle size={19} aria-hidden /></span>
+          <span className={styles.kpiBody}>
+            <span className={styles.kpiLabel}>告警设备</span>
+            <span className={styles.kpiValue}>{kpi.alarm}<small>台</small></span>
+            <span className={styles.kpiSub}>{kpi.alarmPct}%</span>
+          </span>
+        </div>
+        <div className={styles.kpiCard}>
+          <span className={styles.kpiIcon}><Wrench size={19} aria-hidden /></span>
+          <span className={styles.kpiBody}>
+            <span className={styles.kpiLabel}>维护建议</span>
+            <span className={styles.kpiValue}>{kpi.adviceCount}<small>项</small></span>
+            <span className={styles.kpiSub}>基于运行指标</span>
+          </span>
+        </div>
       </div>
 
-      <Panel flush>
-        {filtered.length === 0 ? (
-          <EmptyState title="没有匹配的设备" description="尝试调整筛选条件。" />
-        ) : (
-          <Table
-            columns={columns}
-            rows={filtered}
-            rowKey={(d) => d.id}
-            onRowClick={setSelected}
-            rowLabel={(d) => `设备 ${d.name}`}
-          />
-        )}
-      </Panel>
-
-      <Drawer open={selected !== null} title={selected?.name ?? '设备详情'} onClose={() => setSelected(null)} width={400}>
-        {selected && (
-          <div className={styles.detailStack}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StatusDot tone={deviceStatusTone(selected.status)} label={deviceStatusLabel(selected.status)} />
-              <Tag tone="neutral">{KIND_META[selected.kind].label}</Tag>
+      <div className={styles.layout}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', minWidth: 0 }}>
+          {/* 筛选 */}
+          <div className={styles.toolbar}>
+            <div style={{ width: 220 }}>
+              <Search value={query} onChange={(value) => { setQuery(value); setPage(1); }} placeholder="搜索设备名称或编号" />
             </div>
-            {(selected.status === 'fault' || selected.status === 'offline') && (
-              <InlineAlert tone="danger" title="需人工介入">
-                该设备当前不可用，自动调节已避开此设备。请安排检修。
-              </InlineAlert>
-            )}
-            <div>
-              <div className={styles.note} style={{ marginBottom: 8 }}>基础信息</div>
-              <DescriptionList
-                items={[
-                  { label: '设备编号', value: selected.id },
-                  { label: '所属冷库', value: room.name },
-                  { label: '类型', value: KIND_META[selected.kind].label },
-                  { label: '状态', value: deviceStatusLabel(selected.status) },
-                ]}
-              />
-            </div>
-            {Object.keys(selected.metrics ?? {}).length > 0 && (
-              <div>
-                <div className={styles.note} style={{ marginBottom: 8 }}>运行指标</div>
-                {Object.entries(selected.metrics ?? {}).map(([k, v]) => (
-                  <div key={k} className={styles.metricRow}>
-                    <span className={styles.metricLabel}>{k}</span>
-                    <span className={styles.metricValue}>{v}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div>
-              <div className={styles.note} style={{ marginBottom: 8 }}>维护建议（只读）</div>
-              <ul className={styles.adviceList}>
-                {maintenanceAdvice(selected).map((a, i) => (
-                  <li key={i}>{a}</li>
-                ))}
-              </ul>
-            </div>
+            <Select ariaLabel="类型" options={KIND_OPTIONS} value={kind} onChange={(value) => { setKind(value); setPage(1); }} />
+            <Select ariaLabel="状态" options={STATUS_OPTIONS} value={status} onChange={(value) => { setStatus(value); setPage(1); }} />
+            <label className={styles.alarmOnly}>
+              <input type="checkbox" checked={alarmOnly} onChange={(event) => { setAlarmOnly(event.target.checked); setPage(1); }} />
+              只看告警
+            </label>
+            <span className={styles.toolbarSpacer} />
+            <Tag tone="neutral">共 {filtered.length} 台</Tag>
           </div>
+
+          {/* 设备表 */}
+          <Panel flush>
+            {pageRows.length === 0 ? (
+              <EmptyState title="没有匹配的设备" description="尝试调整筛选条件。" />
+            ) : (
+              <>
+                <Table
+                  columns={columns}
+                  rows={pageRows}
+                  rowKey={(device) => device.id}
+                  onRowClick={(device) => setSelected(device)}
+                  rowLabel={(device) => `设备 ${device.name}`}
+                  minWidth={860}
+                />
+                <div className={styles.pagerRow}>
+                  <Pagination total={filtered.length} page={safePage} pageSize={PAGE_SIZE} onPageChange={setPage} />
+                </div>
+              </>
+            )}
+          </Panel>
+        </div>
+
+        {/* 右侧详情（宽屏） */}
+        {!isCompact && (
+          <Panel title="设备详情" className={styles.sidePanel}>
+            {detailPanel ?? <EmptyState title="未选择设备" description="点击左侧设备行查看详情。" />}
+          </Panel>
+        )}
+      </div>
+
+      {/* 窄屏详情 Drawer */}
+      <Drawer open={isCompact && selected !== null} title={selected?.name ?? '设备详情'} width={420} onClose={() => setSelected(null)}>
+        {selected && (
+          <DeviceDetailPanel device={selected} roomName={room.name} roomEvents={roomEvents} onClose={() => setSelected(null)} />
         )}
       </Drawer>
     </div>

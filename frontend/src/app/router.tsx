@@ -20,6 +20,7 @@ export function AppRoutes() {
         <Route index element={<Navigate to="/command-center" replace />} />
         <Route path="/command-center" element={<CommandCenterPage />} />
         <Route path="/monitoring" element={<MonitoringPage />} />
+        <Route path="/realtime" element={<MonitoringPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/workbench" element={<AnomalyWorkbenchPage />} />
         <Route path="/workbench/:eventId" element={<AnomalyWorkbenchPage />} />

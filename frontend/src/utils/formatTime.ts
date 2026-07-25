@@ -2,14 +2,22 @@
  * 时间格式化工具。
  * 演示数据基于固定 UTC 参考时间，统一按 UTC 渲染，
  * 保证任何时区下显示均与演示叙事一致（如 09:15 起）。
+ * 12/24 小时制读取界面设置（uiPrefs，纯前端）。
  */
 
-/** HH:mm（UTC）。 */
+import { getUiPrefs } from './uiPrefs';
+
+/** HH:mm（UTC）；12 小时制时如 “下午3:04”。 */
 export function formatTimeHM(iso: string): string {
   const d = new Date(iso);
-  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const hours = d.getUTCHours();
   const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `${hh}:${mm}`;
+  if (getUiPrefs().timeFormat === '12h') {
+    const period = hours < 12 ? '上午' : '下午';
+    const h12 = hours % 12 === 0 ? 12 : hours % 12;
+    return `${period}${h12}:${mm}`;
+  }
+  return `${String(hours).padStart(2, '0')}:${mm}`;
 }
 
 /** M月d日 HH:mm（UTC）。 */

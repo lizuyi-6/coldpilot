@@ -6,8 +6,11 @@ import { MemoryRouter } from 'react-router-dom';
 vi.mock('@/components/domain/MetricChart', () => ({
   MetricChart: () => <div data-testid="metric-chart" />,
 }));
-vi.mock('@/components/domain/EnergyBarChart', () => ({
-  EnergyBarChart: () => <div data-testid="energy-chart" />,
+vi.mock('@/components/domain/GaugeDonut', () => ({
+  GaugeDonut: () => <div data-testid="gauge-donut" />,
+}));
+vi.mock('@/features/energy/EnergyTrendChart', () => ({
+  EnergyTrendChart: () => <div data-testid="energy-trend-chart" />,
 }));
 import { NAV_ITEMS, navItemForPath } from '@/app/navigation';
 import { AppDataProvider } from '@/state/appData';
@@ -55,7 +58,13 @@ describe('页面加载（mock 模式）', () => {
   it('指挥中心渲染核心区域', async () => {
     renderPage(<CommandCenterPage />);
     await waitFor(() => expect(screen.getByText('冷库概览')).toBeInTheDocument(), { timeout: 4000 });
-    expect(await screen.findByText(/Agent 对话中心/)).toBeInTheDocument();
+    expect(await screen.findByText(/Agent 自主控制中心/)).toBeInTheDocument();
+    // 任务链（八阶段）与四级安全边界始终渲染，聊天输入降级为辅助入口。
+    expect(screen.getByText('异常检测')).toBeInTheDocument();
+    expect(screen.getByText('效果验证')).toBeInTheDocument();
+    expect(screen.getByText('人工审批')).toBeInTheDocument();
+    expect(screen.getByLabelText('安全权限边界')).toBeInTheDocument();
+    expect(screen.getByLabelText('辅助输入（进入完整工作台）')).toBeInTheDocument();
     expect(screen.getByText(/能耗概览/)).toBeInTheDocument();
     expect(screen.getByText(/库存概览/)).toBeInTheDocument();
     expect(screen.getByText(/当前告警/)).toBeInTheDocument();
@@ -66,19 +75,21 @@ describe('页面加载（mock 模式）', () => {
   it('实时监控渲染指标与传感器状态', async () => {
     renderPage(<MonitoringPage />);
     await waitFor(() => expect(screen.getByText('实时监控')).toBeInTheDocument(), { timeout: 4000 });
-    expect(await screen.findByText(/传感器状态/)).toBeInTheDocument();
+    expect(await screen.findByText(/传感器健康度/)).toBeInTheDocument();
   });
 
-  it('异常事件渲染筛选与表格', async () => {
+  it('异常告警渲染筛选与表格', async () => {
     renderPage(<EventsPage />);
-    await waitFor(() => expect(screen.getByText('异常事件')).toBeInTheDocument(), { timeout: 4000 });
-    expect((await screen.findAllByText('进入诊断', { exact: false })).length).toBeGreaterThan(0);
+    await waitFor(() => expect(screen.getByText('异常告警')).toBeInTheDocument(), { timeout: 4000 });
+    expect((await screen.findAllByText('处理', { exact: false })).length).toBeGreaterThan(0);
+    expect(screen.getByText('告警总数')).toBeInTheDocument();
+    expect(screen.getByText('告警详情')).toBeInTheDocument();
   });
 
   it('设备管理渲染设备表', async () => {
     renderPage(<DevicesPage />);
     await waitFor(() => expect(screen.getByText('设备管理')).toBeInTheDocument(), { timeout: 4000 });
-    expect(await screen.findByText(/维护建议/)).toBeInTheDocument();
+    expect((await screen.findAllByText(/维护建议/)).length).toBeGreaterThan(0);
   });
 
   it('库存管理渲染批次与剩余窗口', async () => {
@@ -93,16 +104,16 @@ describe('页面加载（mock 模式）', () => {
     expect((await screen.findAllByText(/单位库存能耗/)).length).toBeGreaterThan(0);
   });
 
-  it('报告与审计渲染两个标签', async () => {
+  it('报告中心渲染两个标签', async () => {
     renderPage(<ReportsAuditPage />);
-    await waitFor(() => expect(screen.getByText('报告与审计')).toBeInTheDocument(), { timeout: 4000 });
+    await waitFor(() => expect(screen.getByText('报告中心')).toBeInTheDocument(), { timeout: 4000 });
     expect(screen.getByRole('tab', { name: '事件报告' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: '安全审计' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: '审计日志' })).toBeInTheDocument();
   });
 
-  it('系统设置渲染安全规则', async () => {
+  it('系统管理渲染安全规则', async () => {
     renderPage(<SettingsPage />);
-    expect(screen.getByText('系统设置')).toBeInTheDocument();
+    expect(screen.getByText('系统管理')).toBeInTheDocument();
     expect((await screen.findAllByText(/安全规则/)).length).toBeGreaterThan(0);
   });
 });

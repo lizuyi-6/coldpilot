@@ -29,12 +29,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: var(--color-accent);
-  color: #fff;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
+}
+.brandLogo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 .brandText { display: flex; flex-direction: column; line-height: 1.25; overflow: hidden; }
 .brandName { font-size: 15px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }

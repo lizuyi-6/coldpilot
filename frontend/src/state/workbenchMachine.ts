@@ -41,6 +41,12 @@ export function transition(state: WorkbenchState, event: WorkbenchEvent): Workbe
   if (event.type === 'RESET') {
     return { status: 'detected', context: { ...initialWorkbenchContext, eventId: context.eventId } };
   }
+  if (event.type === 'HYDRATE') {
+    // 后端已进入诊断后阶段：携带方案恢复到 diagnosisCompleted，可继续仿真与审批（不伪造审批/执行状态）。
+    if (status !== 'detected') return null;
+    const firstPlanId = event.plans[0]?.id ?? null;
+    return { status: 'diagnosisCompleted', context: { ...context, plans: event.plans, activePlanId: firstPlanId, error: null } };
+  }
 
   switch (event.type) {
     case 'START_DIAGNOSIS': {

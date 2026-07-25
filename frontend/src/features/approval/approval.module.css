@@ -1,0 +1,18 @@
+/* 审批操作区（由状态机状态驱动渲染）。 */
+
+.actions {
+  display: grid;
+  gap: var(--space-2);
+}
+.actionRow {
+  display: flex;
+  gap: var(--space-2);
+}
+.actionRow > * {
+  flex: 1;
+}
+.note {
+  font-size: var(--text-micro);
+  color: var(--color-text-muted);
+  text-align: center;
+}

@@ -25,6 +25,8 @@ export { Input } from './Input';
 export { Search } from './Search';
 export { Select } from './Select';
 export type { SelectOption } from './Select';
+export { Switch } from './Switch';
+export { Pagination } from './Pagination';
 export { Dialog } from './Dialog';
 export { Drawer } from './Drawer';
 export { Tooltip } from './Tooltip';

@@ -1,30 +1,28 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { CalendarDays, Check, Plus } from 'lucide-react';
 import type { MetricKey } from '@/domain/types';
 import { useAppData } from '@/state/appData';
-import { METRIC_META } from '@/domain/constants/metrics';
-import {
-  deviceStatusLabel,
-  deviceStatusTone,
-  latestValue,
-  metricSeries,
-  sensorStatusLabel,
-  sensorStatusTone,
-} from '@/domain/viewModels';
+import { METRIC_META, METRIC_ORDER } from '@/domain/constants/metrics';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Panel } from '@/components/ui/Panel';
 import { Segmented } from '@/components/ui/Segmented';
 import { Select } from '@/components/ui/Select';
-import { StatusDot } from '@/components/ui/StatusDot';
+import { Switch } from '@/components/ui/Switch';
 import { Tag } from '@/components/ui/Tag';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { OfflineState } from '@/components/ui/OfflineState';
-import { MetricChart } from '@/components/domain/MetricChart';
-import { EventTimeline } from '@/components/domain/EventTimeline';
+import { IconButton } from '@/components/ui/IconButton';
 import { DemoDataBadge } from '@/components/domain/DemoDataBadge';
+import { MonitoringChartPanel } from '@/features/monitoring/MonitoringChartPanel';
+import { DataQualityPanel } from '@/features/monitoring/DataQualityPanel';
+import { SensorStatePanel } from '@/features/monitoring/SensorStatePanel';
+import { DeviceStatePanel } from '@/features/monitoring/DeviceStatePanel';
+import { SensorHealthPanel } from '@/features/monitoring/SensorHealthPanel';
+import { RoomEventsPanel } from '@/features/monitoring/RoomEventsPanel';
+import { AlertTimelinePanel } from '@/features/monitoring/AlertTimelinePanel';
 import { formatTimeHM } from '@/utils/formatTime';
-import { formatNumber } from '@/utils/formatNumber';
-import styles from './MonitoringPage.module.css';
+import styles from '@/features/monitoring/monitoring.module.css';
 
 const RANGE_OPTIONS = [
   { value: '1h', label: '1h' },
@@ -40,49 +38,105 @@ const RANGE_MS: Record<string, number> = {
   '24h': 24 * 3_600_000,
 };
 
+const REFRESH_OPTIONS = [
+  { value: '5000', label: '5s' },
+  { value: '10000', label: '10s' },
+  { value: '30000', label: '30s' },
+];
+
+type RangeKey = '1h' | '6h' | '12h' | '24h';
+
 export default function MonitoringPage() {
-  const { rooms, loading, roomId, setRoomId, online } = useAppData();
+  const { events, rooms, loading, error, roomId, setRoomId, online, lastUpdated, reload } = useAppData();
   const bundle = rooms[roomId];
   const room = bundle?.room;
-  const [metric, setMetric] = useState<MetricKey>('temperature');
-  const [range, setRange] = useState<'1h' | '6h' | '12h' | '24h'>('6h');
 
-  const telemetry = bundle?.telemetry ?? [];
+  const [range, setRange] = useState<RangeKey>('1h');
+  const [enabledMetrics, setEnabledMetrics] = useState<MetricKey[]>(['temperature', 'humidity', 'o2']);
+  const [activeMetric, setActiveMetric] = useState<MetricKey>('temperature');
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshMs, setRefreshMs] = useState('5000');
+
+  const telemetry = useMemo(() => bundle?.telemetry ?? [], [bundle]);
   const devices = bundle?.devices ?? [];
   const roomEvents = bundle?.roomEvents ?? [];
 
   const roomOptions = Object.values(rooms).map((b) => ({ value: b.room.id, label: b.room.name }));
-  const metricOptions = Object.entries(METRIC_META).map(([value, meta]) => ({ value, label: meta.label }));
+  const collectedMetrics = useMemo(() => new Set(telemetry.map((s) => s.metric)), [telemetry]);
 
-  const series = metricSeries(telemetry, metric);
-  const tempSeries = metricSeries(telemetry, 'temperature');
+  // 切换库房后剔除新库房未采集的指标勾选（未采集 chip 保持禁用，不残留勾选态）。
+  useEffect(() => {
+    setEnabledMetrics((current) => {
+      const pruned = current.filter((metric) => collectedMetrics.has(metric));
+      if (pruned.length === current.length) return current;
+      if (pruned.length > 0) return pruned;
+      const fallback = METRIC_ORDER.find((metric) => collectedMetrics.has(metric));
+      return fallback ? [fallback] : current;
+    });
+  }, [collectedMetrics]);
+
+  // 实时刷新：按选定间隔轮询 ColdPilotClient（数据语义不变，仅触发 reload）。
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = Number.parseInt(refreshMs, 10);
+    const timer = window.setInterval(() => {
+      void reload();
+    }, interval);
+    return () => window.clearInterval(timer);
+  }, [autoRefresh, refreshMs, reload]);
+
+  // 演示数据锚定在数据自身的最近采样时刻（而非真实当前时间）。
+  const anchorMs = useMemo(() => {
+    const stamps = telemetry.map((s) => Date.parse(s.lastSampleAt)).filter((t) => Number.isFinite(t));
+    return stamps.length ? Math.max(...stamps) : Date.now();
+  }, [telemetry]);
+  const windowStartMs = anchorMs - RANGE_MS[range];
+
+  const clippedTelemetry = useMemo(
+    () =>
+      telemetry.map((series) => ({
+        ...series,
+        points: series.points.filter((p) => Date.parse(p.t) >= windowStartMs),
+      })),
+    [telemetry, windowStartMs],
+  );
+  const clippedEvents = useMemo(
+    () => roomEvents.filter((e) => Date.parse(e.at) >= windowStartMs),
+    [roomEvents, windowStartMs],
+  );
+
   const offlineCount = telemetry.filter((s) => s.status === 'offline').length;
 
-  // 演示数据锚定在固定参考时间：时间窗口以最近采样时刻为基准，而非真实当前时间。
-  const anchorMs = useMemo(() => {
-    const last = series?.lastSampleAt ?? tempSeries?.lastSampleAt;
-    return last ? Date.parse(last) : Date.now();
-  }, [series, tempSeries]);
-  const windowMs = useMemo<[number, number]>(() => [anchorMs - RANGE_MS[range], anchorMs], [anchorMs, range]);
+  // 当前激活指标在新库房未采集时，回退到该库房首个已采集指标。
+  const resolvedActiveMetric: MetricKey = collectedMetrics.has(activeMetric)
+    ? activeMetric
+    : (METRIC_ORDER.find((metric) => collectedMetrics.has(metric)) ?? 'temperature');
 
-  // 依据时间范围裁剪数据点。
-  const clippedSeries = useMemo(() => {
-    if (!series) return [];
-    return series.points.filter((p) => Date.parse(p.t) >= windowMs[0]);
-  }, [series, windowMs]);
-
-  const clippedEvents = useMemo(
-    () => roomEvents.filter((e) => Date.parse(e.at) >= windowMs[0]),
-    [roomEvents, windowMs],
-  );
+  const toggleMetric = (metric: MetricKey) => {
+    setEnabledMetrics((current) => {
+      const isOn = current.includes(metric);
+      if (isOn && current.length === 1) return current; // 至少保留一个指标
+      const next = isOn ? current.filter((m) => m !== metric) : [...current, metric];
+      if (!next.includes(activeMetric)) {
+        const fallback = METRIC_ORDER.find((m) => next.includes(m) && collectedMetrics.has(m));
+        if (fallback) setActiveMetric(fallback);
+      }
+      return next;
+    });
+  };
 
   if (loading && !bundle) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <SkeletonLoader lines={2} />
         <SkeletonLoader lines={4} />
+        <SkeletonLoader lines={4} />
       </div>
     );
+  }
+  // 后端请求失败且无任何缓存数据：错误态 + 重试（区别于“无数据”）。
+  if (error && !bundle) {
+    return <ErrorState title="监控数据加载失败" description={error} onRetry={() => void reload()} />;
   }
   if (!room || !bundle) {
     return <EmptyState title="暂无监控数据" description="当前冷库没有实时数据。" />;
@@ -93,108 +147,85 @@ export default function MonitoringPage() {
       <PageHeader
         title="实时监控"
         description={`${room.name} · 多指标实时趋势 · 目标区间 · 事件标记`}
-        actions={<DemoDataBadge kind="demo" />}
+        actions={
+          <>
+            {loading && <Tag tone="neutral">更新中…</Tag>}
+            <div className={styles.refreshGroup}>
+              <span className={styles.filterLabel}>实时刷新</span>
+              <Select ariaLabel="刷新间隔" options={REFRESH_OPTIONS} value={refreshMs} onChange={setRefreshMs} />
+              <Switch checked={autoRefresh} onChange={setAutoRefresh} ariaLabel="实时刷新开关" />
+            </div>
+            <DemoDataBadge kind="demo" />
+          </>
+        }
       />
 
-      {!online && <OfflineState lastUpdated={tempSeries ? formatTimeHM(tempSeries.lastSampleAt) : undefined} />}
+      {!online && <OfflineState lastUpdated={lastUpdated ? formatTimeHM(lastUpdated) : undefined} />}
 
-      <div className={styles.toolbar}>
-        <Select ariaLabel="选择冷库" options={roomOptions} value={roomId} onChange={setRoomId} />
-        <Segmented
-          options={RANGE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-          value={range}
-          onChange={(v) => setRange(v as typeof range)}
-          ariaLabel="时间范围"
-        />
-        <span className={styles.toolbarSpacer} />
-        <Select ariaLabel="主指标" options={metricOptions} value={metric} onChange={(v) => setMetric(v as MetricKey)} />
+      <div className={styles.filterBar}>
+        <div className={styles.filterGroup}>
+          <span className={styles.filterLabel}>冷库选择</span>
+          <Select ariaLabel="选择冷库" options={roomOptions} value={roomId} onChange={setRoomId} />
+        </div>
+        <div className={styles.filterGroup}>
+          <span className={styles.filterLabel}>时间范围</span>
+          <Segmented
+            options={RANGE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            value={range}
+            onChange={(v) => setRange(v as RangeKey)}
+            ariaLabel="时间范围"
+          />
+          <IconButton aria-label="按日历选择（暂未接入）" disabled title="自定义时间范围暂未接入后端，暂不可用">
+            <CalendarDays size={15} />
+          </IconButton>
+        </div>
+        <div className={styles.filterGroup}>
+          <span className={styles.filterLabel}>指标选择</span>
+          <div className={styles.metricChips}>
+            {METRIC_ORDER.map((metric) => {
+              const collected = collectedMetrics.has(metric);
+              const enabled = enabledMetrics.includes(metric);
+              return (
+                <button
+                  key={metric}
+                  type="button"
+                  className={`${styles.chip} ${enabled ? styles.chipOn : ''}`}
+                  disabled={!collected}
+                  title={collected ? undefined : '当前库房未采集该指标'}
+                  aria-pressed={enabled}
+                  onClick={() => toggleMetric(metric)}
+                >
+                  {enabled ? <Check size={13} aria-hidden /> : <Plus size={13} aria-hidden />}
+                  {METRIC_META[metric].label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
         {offlineCount > 0 && <Tag tone="warning">{offlineCount} 个传感器离线</Tag>}
       </div>
 
-      <div className={styles.grid}>
-        <div className={styles.colStack}>
-          <Panel
-            title={`${METRIC_META[metric].label}趋势（${range}）`}
-            action={
-              series && (
-                <StatusDot tone={sensorStatusTone(series.status)} label={sensorStatusLabel(series.status)} />
-              )
-            }
-          >
-            <div className={styles.chartPanel}>
-              {series ? (
-                <>
-                  <MetricChart
-                    series={clippedSeries}
-                    unit={series.unit}
-                    target={metric === 'temperature' ? room.targetRange : undefined}
-                    markers={[]}
-                    height={280}
-                  />
-                  <div className={styles.note}>
-                    当前 {latestValue(series) !== null ? formatNumber(latestValue(series)!, metric === 'pressureDiff' ? 0 : 1) : '—'} {series.unit}
-                    {metric === 'temperature' && ` · 目标 ${room.targetRange.min}~${room.targetRange.max} ${room.targetRange.unit}`}
-                    {' · '}更新 {formatTimeHM(series.lastSampleAt)}
-                  </div>
-                </>
-              ) : (
-                <EmptyState title="该指标无数据" description={`当前冷库未采集 ${METRIC_META[metric].label}。`} />
-              )}
-            </div>
-          </Panel>
-
-          <Panel title="事件时间轴">
-            {clippedEvents.length === 0 ? (
-              <EmptyState title="该时间范围内无事件" description="库门/入库/压缩机启停事件将显示于此。" />
-            ) : (
-              <EventTimeline events={clippedEvents} windowMs={windowMs} />
-            )}
-            <div className={styles.eventList}>
-              {clippedEvents.map((e) => (
-                <div key={e.id} className={styles.eventItem}>
-                  <span className={styles.eventTime}>{formatTimeHM(e.at)}</span>
-                  <span>{e.label}</span>
-                  {e.detail && <span className={styles.note}>{e.detail}</span>}
-                </div>
-              ))}
-            </div>
-          </Panel>
+      <div className={styles.mainGrid}>
+        <div className={styles.leftStack}>
+          <MonitoringChartPanel
+            roomName={room.name}
+            telemetry={clippedTelemetry}
+            enabledMetrics={enabledMetrics}
+            activeMetric={resolvedActiveMetric}
+            onMetricChange={setActiveMetric}
+            markers={clippedEvents}
+            height={320}
+          />
+          <div className={styles.bottomPair}>
+            <SensorHealthPanel telemetry={telemetry} />
+            <RoomEventsPanel events={roomEvents} />
+          </div>
         </div>
-
-        <div className={styles.colStack}>
-          <Panel title="传感器状态">
-            {telemetry.length === 0 ? (
-              <EmptyState title="无传感器" />
-            ) : (
-              telemetry.map((s) => (
-                <div key={s.metric} className={styles.sensorRow}>
-                  <span className={styles.sensorName}>
-                    <StatusDot tone={sensorStatusTone(s.status)} />
-                    {METRIC_META[s.metric].label}
-                  </span>
-                  <span className={styles.sensorMeta}>
-                    {sensorStatusLabel(s.status)} · {formatTimeHM(s.lastSampleAt)}
-                  </span>
-                </div>
-              ))
-            )}
-          </Panel>
-
-          <Panel title="设备实时状态">
-            {devices.length === 0 ? (
-              <EmptyState title="无设备" />
-            ) : (
-              devices.map((d) => (
-                <div key={d.id} className={styles.sensorRow}>
-                  <span className={styles.sensorName}>
-                    <StatusDot tone={deviceStatusTone(d.status)} />
-                    {d.name}
-                  </span>
-                  <span className={styles.sensorMeta}>{deviceStatusLabel(d.status)}</span>
-                </div>
-              ))
-            )}
-          </Panel>
+        <div className={styles.sideStack}>
+          <DataQualityPanel telemetry={telemetry} />
+          <SensorStatePanel telemetry={telemetry} />
+          <DeviceStatePanel devices={devices} updatedAt={lastUpdated ? formatTimeHM(lastUpdated) : null} />
+          <AlertTimelinePanel events={events} />
         </div>
       </div>
     </div>

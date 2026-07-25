@@ -1,0 +1,213 @@
+/* Agent 自主控制中心（首页右上）：浅色看板主题，沿用现有设计系统 token。 */
+
+.panelFill { height: 100%; }
+.panelFill > div { flex: 1; min-height: 0; overflow: hidden; }
+
+.headActions { display: inline-flex; align-items: center; gap: 8px; }
+.headMeta { font-size: 11px; color: var(--color-text-muted); white-space: nowrap; }
+
+.homeBody { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+
+/* ---------- 监测任务条 ---------- */
+.monitorStrip {
+  display: flex; flex-wrap: wrap; gap: 4px 14px;
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  padding: 6px 10px;
+}
+.monitorItem { display: inline-flex; align-items: baseline; gap: 5px; font-size: 11px; white-space: nowrap; }
+.monitorItem i { font-style: normal; color: var(--color-text-muted); }
+.monitorItem b { font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
+.tone-ok { color: var(--color-success) !important; }
+.tone-warn { color: var(--color-warning) !important; }
+.tone-danger { color: var(--color-danger) !important; }
+.tone-muted { color: var(--color-text-muted) !important; }
+
+/* ---------- 当前判断 ---------- */
+.judgment {
+  margin: 0;
+  font-size: var(--text-caption);
+  line-height: 17px;
+  color: var(--color-text-secondary);
+  border-left: 3px solid var(--color-accent);
+  padding: 2px 0 2px 8px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* ---------- 滚动区 ---------- */
+.scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 2px; }
+
+/* ---------- 八阶段任务链 ---------- */
+.phaseGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.phaseCell {
+  display: flex; align-items: center; gap: 6px;
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: 8px;
+  padding: 5px 7px;
+  min-width: 0;
+  background: var(--bg-surface);
+}
+.phaseIcon {
+  width: 22px; height: 22px; border-radius: var(--radius-full);
+  background: var(--color-neutral-100); color: var(--color-text-muted);
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.phaseText { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.phaseLabel { font-size: 11px; font-weight: var(--font-weight-medium); color: var(--color-text-primary); white-space: nowrap; }
+.phaseState { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; color: var(--color-text-muted); white-space: nowrap; }
+
+.phase-done { border-color: #bfe6d6; }
+.phase-done .phaseIcon { background: var(--color-accent-subtle); color: var(--color-accent); }
+.phase-done .phaseState { color: var(--color-accent); }
+.phase-running { border-color: var(--color-accent); background: var(--color-accent-subtle); }
+.phase-running .phaseIcon { background: var(--color-accent); color: #fff; }
+.phase-running .phaseState { color: var(--color-accent); font-weight: var(--font-weight-medium); }
+.phase-awaiting { border-color: var(--color-warning); background: var(--color-warning-subtle); }
+.phase-awaiting .phaseIcon { background: var(--color-warning); color: #fff; }
+.phase-awaiting .phaseState { color: var(--color-warning); font-weight: var(--font-weight-medium); }
+.phase-failed { border-color: var(--color-danger); }
+.phase-failed .phaseIcon { background: var(--color-danger); color: #fff; }
+.phase-failed .phaseState { color: var(--color-danger); }
+.phase-blocked { border-color: var(--color-danger); background: var(--color-danger-subtle, #fdeeee); }
+.phase-blocked .phaseIcon { background: var(--color-danger); color: #fff; }
+.phase-blocked .phaseState { color: var(--color-danger); }
+.phaseActive { box-shadow: 0 0 0 2px var(--color-accent-subtle); }
+
+.spin { animation: agenthome-spin 0.9s linear infinite; }
+@keyframes agenthome-spin { to { transform: rotate(360deg); } }
+
+/* ---------- 焦点卡 ---------- */
+.card {
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.cardWarning { border-color: var(--color-warning); background: var(--color-warning-subtle); }
+.cardSuccess { border-color: #bfe6d6; }
+.cardDanger { border-color: var(--color-danger); background: var(--color-danger-subtle, #fdeeee); }
+.cardHead { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--color-text-primary); }
+.cardHeadRight { display: inline-flex; align-items: center; gap: 6px; }
+.muted { margin: 0; font-size: 11px; line-height: 15px; color: var(--color-text-muted); }
+.reason { margin: 0; font-size: var(--text-caption); line-height: 17px; color: var(--color-text-secondary); }
+.nextStep {
+  margin: 0; font-size: var(--text-caption); color: var(--color-accent); font-weight: var(--font-weight-medium);
+  border-top: 1px dashed var(--color-border-subtle); padding-top: 6px;
+}
+.progressLine { display: flex; align-items: center; gap: 6px; margin: 0; font-size: var(--text-caption); color: var(--color-accent); }
+
+.statRow { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11px; color: var(--color-text-secondary); }
+.statRow b { color: var(--color-text-primary); }
+
+.linkRow { display: flex; gap: 12px; }
+.linkBtn { background: none; border: none; padding: 0; color: var(--color-accent); font-size: 11px; cursor: pointer; white-space: nowrap; }
+.linkBtn:hover { text-decoration: underline; }
+.actionRow { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ---------- 工具调用 ---------- */
+.toolList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.toolItem { display: flex; align-items: center; gap: 7px; font-size: var(--text-caption); min-width: 0; }
+.toolStatus { width: 16px; height: 16px; border-radius: var(--radius-full); background: var(--color-neutral-100); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--color-text-muted); }
+.toolOk { color: var(--color-accent); display: inline-flex; align-items: center; }
+.toolBad { color: var(--color-danger); display: inline-flex; align-items: center; }
+.toolPending { color: var(--color-text-muted); display: inline-flex; align-items: center; }
+.toolLabel { color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toolMs { margin-left: auto; color: var(--color-text-muted); font-size: 11px; white-space: nowrap; }
+.disclosure {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: none; padding: 0;
+  color: var(--color-text-muted); font-size: 11px; cursor: pointer;
+}
+.disclosure:hover { color: var(--color-accent); }
+.toolDetails { display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed var(--color-border-subtle); padding-top: 6px; }
+.toolDetailRow { font-size: 11px; color: var(--color-text-secondary); display: flex; flex-direction: column; gap: 2px; }
+.toolDetailLabel { display: inline-block; min-width: 28px; color: var(--color-text-muted); margin-right: 6px; }
+
+/* ---------- 原因诊断 ---------- */
+.causeList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.causeItem { display: flex; gap: 8px; }
+.causeRank {
+  width: 18px; height: 18px; border-radius: var(--radius-full);
+  background: var(--color-neutral-100); color: var(--color-text-secondary);
+  font-size: 10px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+.causeBody { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.causeTop { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.causeLabel { font-size: var(--text-caption); font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
+.causeConf { font-size: 11px; color: var(--color-text-secondary); }
+.causeEvidence, .causeCounter, .causeCheck { font-size: 11px; line-height: 15px; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.causeCounter { color: var(--color-warning); }
+
+/* ---------- 键值与参数表 ---------- */
+.kvGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 14px; }
+.kvItem { font-size: 11px; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kvItem i { font-style: normal; color: var(--color-text-muted); margin-right: 6px; }
+.paramTable { width: 100%; border-collapse: collapse; font-size: 11px; }
+.paramTable th { text-align: left; padding: 3px 6px; background: var(--color-neutral-100); color: var(--color-text-secondary); font-weight: var(--font-weight-medium); white-space: nowrap; }
+.paramTable td { padding: 3px 6px; border-top: var(--border-hairline) solid var(--color-border-subtle); color: var(--color-text-primary); white-space: nowrap; }
+
+.safetyList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--color-text-primary); }
+.safetyList li { display: flex; align-items: center; gap: 6px; }
+.approveNote { margin: 0; font-size: var(--text-caption); color: var(--color-warning); font-weight: var(--font-weight-medium); }
+
+/* ---------- 执行 / 验证 ---------- */
+.execMeta { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11px; color: var(--color-text-secondary); }
+.execMeta span { display: inline-flex; align-items: center; gap: 4px; }
+.progressRow { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.progressTrack { flex: 1; height: 6px; border-radius: 3px; background: var(--color-neutral-100); overflow: hidden; }
+.progressFill { display: block; height: 100%; background: var(--color-accent); border-radius: 3px; transition: width 0.4s ease; }
+.sparkRow { display: flex; align-items: center; gap: 10px; }
+.checkList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.checkList li { display: flex; align-items: center; gap: 7px; font-size: 11px; min-width: 0; }
+.checkLabel { color: var(--color-text-primary); font-weight: var(--font-weight-medium); white-space: nowrap; }
+
+/* ---------- L3 ---------- */
+.l3Action { margin: 0; font-size: var(--text-caption); font-weight: var(--font-weight-medium); color: var(--color-danger); }
+.l3Note { margin: 0; font-size: 11px; color: var(--color-danger); }
+.auditList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.auditItem { display: flex; flex-direction: column; gap: 3px; border-bottom: var(--border-hairline) solid var(--color-border-subtle); padding-bottom: 8px; }
+.auditItem:last-child { border-bottom: none; padding-bottom: 0; }
+.auditTop { display: flex; align-items: center; gap: 7px; font-size: var(--text-caption); color: var(--color-text-primary); }
+
+/* ---------- 四级安全权限条 ---------- */
+.securityStrip {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  border-top: var(--border-hairline) solid var(--color-border-subtle);
+  padding-top: 8px;
+}
+.levelCell {
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: 8px;
+  padding: 5px 8px;
+  display: flex; flex-direction: column; gap: 1px;
+  min-width: 0;
+  background: var(--bg-surface);
+}
+.levelHead { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--color-text-primary); }
+.levelState { margin-left: auto; font-size: 10px; color: var(--color-text-muted); white-space: nowrap; }
+.levelTitle { font-size: 10px; color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.level-auto-done { border-color: #bfe6d6; }
+.level-auto-done .levelState { color: var(--color-accent); }
+.level-need-human { border-color: var(--color-warning); background: var(--color-warning-subtle); }
+.level-need-human .levelState { color: var(--color-warning); font-weight: var(--font-weight-semibold); }
+.level-approved .levelState { color: var(--color-accent); }
+.level-blocked { border-color: var(--color-danger); background: var(--color-danger-subtle, #fdeeee); }
+.level-blocked .levelHead, .level-blocked .levelState { color: var(--color-danger); }
+
+/* ---------- 底部辅助输入 ---------- */
+.footer { display: flex; gap: 8px; align-items: center; border-top: var(--border-hairline) solid var(--color-border-subtle); padding-top: 8px; }
+.footer > div { flex: 1; }
+.sendBtn {
+  width: 34px; height: 34px; border: none; border-radius: 8px;
+  background: var(--color-accent); color: #fff; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.sendBtn:hover { background: var(--color-accent-hover); }
+.workbenchLink { background: none; border: none; color: var(--color-accent); font-size: var(--text-caption); cursor: pointer; white-space: nowrap; padding: 0 2px; }
+.workbenchLink:hover { text-decoration: underline; }
+
+@media (max-width: 1279px) {
+  .phaseGrid { grid-template-columns: repeat(2, 1fr); }
+}

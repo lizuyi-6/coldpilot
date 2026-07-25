@@ -1,0 +1,171 @@
+/* 实时监控页共享样式（模块位置 / 信息密度对照目标效果图）。 */
+
+/* ---------- 页面骨架 ---------- */
+.page { display: flex; flex-direction: column; gap: var(--space-4); }
+
+/* ---------- 筛选栏 ---------- */
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  background: var(--bg-surface);
+  border: var(--border-hairline) solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+.filterGroup { display: flex; align-items: center; gap: var(--space-2); }
+.filterLabel { font-size: var(--text-caption); color: var(--color-text-muted); white-space: nowrap; }
+.metricChips { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--bg-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip:hover:not(:disabled) { border-color: var(--color-accent); color: var(--color-accent); }
+.chip:disabled { opacity: 0.5; cursor: not-allowed; }
+.chipOn {
+  border-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-weight: var(--font-weight-medium);
+}
+.refreshGroup { display: inline-flex; align-items: center; gap: var(--space-2); }
+
+/* ---------- 主区网格：左列（图表+底部双栏）/ 右列（状态面板堆叠） ---------- */
+.mainGrid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-4); align-items: start; }
+.leftStack { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.sideStack { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.bottomPair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+
+/* ---------- 图表面板 ---------- */
+.fullscreenBody { display: flex; flex-direction: column; gap: var(--space-3); }
+.chartHead { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.chartStats { display: flex; align-items: center; gap: var(--space-5); }
+.statBlock { display: flex; flex-direction: column; gap: 2px; }
+.statLabel { font-size: var(--text-caption); color: var(--color-text-muted); }
+.statValue { font-size: 24px; line-height: 30px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+.statValue small { font-size: var(--text-caption); font-weight: var(--font-weight-regular); color: var(--color-text-muted); margin-left: 2px; }
+.statValueOut { color: var(--color-danger); }
+.statTarget { font-size: var(--text-body); color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+
+.metricTabs { display: flex; align-items: center; gap: var(--space-4); border-bottom: var(--border-hairline) solid var(--color-border-subtle); }
+.metricTab {
+  position: relative;
+  padding: var(--space-2) 2px;
+  border: none;
+  background: none;
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.metricTab:hover { color: var(--color-accent); }
+.metricTabActive { color: var(--color-accent); font-weight: var(--font-weight-medium); }
+.metricTabActive::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--color-accent);
+  border-radius: 2px;
+}
+
+.legend { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+.legendItem { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-caption); color: var(--color-text-secondary); }
+.legendLine { width: 14px; height: 2px; border-radius: 2px; background: var(--color-accent); }
+.legendBand { width: 12px; height: 10px; border-radius: 2px; background: rgba(15, 169, 120, 0.12); border: 1px dashed rgba(15, 169, 120, 0.55); }
+.legendMark { width: 8px; height: 8px; border-radius: 2px; }
+
+/* ---------- 数据质量 ---------- */
+.qualityBody { display: flex; align-items: center; gap: var(--space-4); }
+.qualityStats { display: flex; flex-direction: column; gap: var(--space-3); flex: 1; }
+.qualityRow { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); font-size: var(--text-caption); }
+.qualityName { color: var(--color-text-muted); }
+.qualityValue { color: var(--color-text-primary); font-weight: var(--font-weight-medium); font-variant-numeric: tabular-nums; }
+
+/* ---------- 传感器状态 ---------- */
+.sensorCountRow { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: var(--border-hairline) solid var(--color-border-subtle); }
+.sensorCountRow:last-child { border-bottom: none; }
+.sensorCountIcon {
+  width: 34px; height: 34px; border-radius: var(--radius-sm);
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+}
+.sensorCountText { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.sensorCountName { font-size: var(--text-caption); color: var(--color-text-muted); }
+.sensorCountValue { font-size: 20px; line-height: 26px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); font-variant-numeric: tabular-nums; }
+.sensorCountValue small { font-size: var(--text-caption); font-weight: var(--font-weight-regular); color: var(--color-text-muted); margin-left: 3px; }
+.sensorCountPct { font-size: var(--text-caption); color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+
+/* ---------- 设备实时状态 ---------- */
+.deviceRow { display: flex; align-items: center; gap: var(--space-3); padding: 7px 0; border-bottom: var(--border-hairline) solid var(--color-border-subtle); }
+.deviceRow:last-child { border-bottom: none; }
+.deviceIcon { width: 30px; height: 30px; border-radius: var(--radius-sm); background: var(--bg-subtle); display: inline-flex; align-items: center; justify-content: center; color: var(--color-text-secondary); flex: none; }
+.deviceName { flex: 1; min-width: 0; font-size: var(--text-body); color: var(--color-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deviceHint { font-size: var(--text-caption); color: var(--color-text-muted); font-variant-numeric: tabular-nums; }
+.panelFooter {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding-top: var(--space-3); margin-top: var(--space-1);
+  border-top: var(--border-hairline) solid var(--color-border-subtle);
+  font-size: var(--text-caption); color: var(--color-text-muted);
+}
+.footerLink {
+  display: inline-flex; align-items: center; gap: 2px;
+  border: none; background: none; padding: 0;
+  color: var(--color-accent); font-size: var(--text-caption); cursor: pointer;
+}
+.footerLink:hover { text-decoration: underline; }
+
+/* ---------- 底部双栏（左列内） ---------- */
+
+/* 传感器健康度表 */
+.healthBar { width: 64px; height: 6px; border-radius: 3px; background: var(--color-neutral-100); overflow: hidden; }
+.healthFill { height: 100%; border-radius: 3px; }
+.healthCell { display: inline-flex; align-items: center; gap: var(--space-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.unavailableCell { color: var(--color-text-muted); font-size: var(--text-caption); white-space: nowrap; }
+.sensorNameCell { font-weight: var(--font-weight-medium); color: var(--color-text-primary); white-space: nowrap; }
+.unitCell { color: var(--color-text-secondary); white-space: nowrap; }
+
+/* 时间线（事件 / 告警共用） */
+.timeline { display: flex; flex-direction: column; }
+.timelineItem { position: relative; display: flex; gap: var(--space-3); padding-bottom: var(--space-4); }
+.timelineItem:last-child { padding-bottom: 0; }
+.timelineRail { position: absolute; left: 13px; top: 28px; bottom: 0; width: 1px; background: var(--color-border-subtle); }
+.timelineItem:last-child .timelineRail { display: none; }
+.timelineIcon {
+  width: 27px; height: 27px; border-radius: 50%; flex: none; z-index: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.timelineBody { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.timelineTop { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
+.timelineTitle { font-size: var(--text-body); color: var(--color-text-primary); font-weight: var(--font-weight-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.timelineTime { font-size: var(--text-caption); color: var(--color-text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.timelineDetail { font-size: var(--text-caption); color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 告警时间线左侧色条 */
+.alertItem { border-left: 3px solid var(--color-border-subtle); padding-left: var(--space-3); border-radius: 2px; }
+.alertItemCritical { border-left-color: var(--color-danger); }
+.alertItemWarning { border-left-color: var(--color-warning); }
+.alertItemNotice { border-left-color: var(--color-info); }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 1440px) {
+  .mainGrid { grid-template-columns: minmax(0, 1fr) 300px; }
+}
+@media (max-width: 1680px) {
+  .bottomPair { grid-template-columns: 1fr; }
+}
+@media (max-width: 1280px) {
+  .mainGrid { grid-template-columns: 1fr; }
+  .sideStack { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); align-items: start; }
+}

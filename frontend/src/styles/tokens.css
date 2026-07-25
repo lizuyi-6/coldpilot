@@ -120,3 +120,33 @@
 [data-theme="dark"] {
   /* TODO(future): dark palette mapping */
 }
+
+/* ---------- 界面密度（界面设置，纯前端，data-density） ---------- */
+:root[data-density='compact'] {
+  --space-3: 10px;
+  --space-4: 12px;
+  --space-5: 18px;
+  --space-6: 24px;
+  --text-body: 13px;
+  --text-caption: 11px;
+}
+:root[data-density='loose'] {
+  --space-3: 14px;
+  --space-4: 20px;
+  --space-5: 28px;
+  --space-6: 40px;
+}
+
+/* ---------- 主题色（界面设置，纯前端，data-theme-color） ---------- */
+:root[data-theme-color='blue'] {
+  --color-accent: #3478f6;
+  --color-accent-hover: #2463d6;
+  --color-accent-subtle: #e9f1fe;
+  --focus-ring: 0 0 0 2px rgba(52, 120, 246, 0.35);
+}
+:root[data-theme-color='violet'] {
+  --color-accent: #7c5cd6;
+  --color-accent-hover: #6848c0;
+  --color-accent-subtle: #f0ebfc;
+  --focus-ring: 0 0 0 2px rgba(124, 92, 214, 0.35);
+}

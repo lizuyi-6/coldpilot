@@ -1,31 +1,34 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { ListTodo, PanelsTopLeft } from 'lucide-react';
 import type { AnomalyEventSummary } from '@/domain/types';
 import { getColdPilotClient } from '@/api';
 import { useWorkbench } from '@/state/useWorkbench';
-import { useIsWideLayout, useMediaQuery } from '@/utils/useMediaQuery';
-import { WorkbenchLayout } from '@/layouts/WorkbenchLayout';
+import { useMediaQuery } from '@/utils/useMediaQuery';
 import { Drawer } from '@/components/ui/Drawer';
-import { EventListPane } from '@/features/anomaly/EventListPane';
-import { DiagnosisPane } from '@/features/diagnosis/DiagnosisPane';
-import { InspectorPane } from '@/features/inspector/InspectorPane';
+import { Button } from '@/components/ui/Button';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
+import { DemoDataBadge } from '@/components/domain/DemoDataBadge';
+import { AgentTaskPane } from '@/features/agent/AgentTaskPane';
+import { AgentConversationPane } from '@/features/agent/AgentConversationPane';
+import { AgentContextPane } from '@/features/agent/AgentContextPane';
+import styles from '@/features/agent/agent.module.css';
 
 const DEFAULT_EVENT_ID = 'evt-1';
 
-/** 异常事件工作台：三栏诊断闭环（产品重心）。宽屏检查器默认展开；≤1023px 转为抽屉。 */
+/**
+ * Agent 对话与分析页（三栏：任务 / 对话与分析 / 上下文）。
+ * 状态机与 L2/L3 流程由 useWorkbench 承载；≤1280px 时左右栏转为 Drawer，中栏优先。
+ */
 export default function AnomalyWorkbenchPage() {
   const wb = useWorkbench();
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
   const [events, setEvents] = useState<AnomalyEventSummary[] | null>(null);
-  const isWide = useIsWideLayout();
-  // ≤1023px：检查器转为覆盖式抽屉（不占栏宽）。
-  const isCompact = useMediaQuery('(max-width: 1023px)');
-  // 用户手动偏好（null = 跟随断点默认：宽屏展开 / 窄屏折叠）。
-  const [inspectorOverride, setInspectorOverride] = useState<boolean | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const inspectorCollapsed = inspectorOverride ?? !isWide;
+  // ≤1280px：左任务栏 / 右上下文栏转为抽屉（任务书响应式要求）。
+  const isCompact = useMediaQuery('(max-width: 1280px)');
+  const [taskDrawerOpen, setTaskDrawerOpen] = useState(false);
+  const [contextDrawerOpen, setContextDrawerOpen] = useState(false);
 
   // 加载事件列表。
   useEffect(() => {
@@ -49,36 +52,76 @@ export default function AnomalyWorkbenchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetEventId]);
 
+  // 选中事件且处于待诊断时自动发起一次诊断（诊断即本页入口动作；每个事件仅自动一次）。
+  const wbRef = useRef(wb);
+  useEffect(() => {
+    wbRef.current = wb;
+  });
+  const autoStartedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const current = wbRef.current;
+    if (current.status !== 'detected' || !current.selectedEventId) return;
+    if (autoStartedRef.current === current.selectedEventId) return;
+    // 仅后端仍处于 detected 的事件自动诊断；已进入诊断后阶段的事件由 selectEvent 水合恢复。
+    const backendStage = events?.find((event) => event.id === current.selectedEventId)?.stage;
+    if (backendStage !== 'detected') return;
+    autoStartedRef.current = current.selectedEventId;
+    void current.startDiagnosis();
+  }, [wb.status, wb.selectedEventId, events]);
+
   const handleSelect = (id: string) => {
+    setTaskDrawerOpen(false);
+    setContextDrawerOpen(false);
     navigate(`/workbench/${id}`, { replace: true });
   };
 
+  const selectedEvent = events?.find((event) => event.id === wb.selectedEventId) ?? null;
+
   if (!events) {
     return (
-      <div style={{ padding: 24 }}>
-        <SkeletonLoader lines={6} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <SkeletonLoader lines={2} />
+        <SkeletonLoader lines={4} />
+        <SkeletonLoader lines={4} />
       </div>
     );
   }
 
+  const taskPane = (
+    <AgentTaskPane events={events} selectedEventId={wb.selectedEventId} activeTask={wb.data.agentTask} onSelect={handleSelect} />
+  );
+  const contextPane = <AgentContextPane wb={wb} events={events} selectedEventId={wb.selectedEventId} onSelect={handleSelect} />;
+
   return (
-    <>
-      <WorkbenchLayout
-        list={<EventListPane events={events} selectedEventId={wb.selectedEventId} onSelect={handleSelect} />}
-        main={<DiagnosisPane wb={wb} />}
-        inspector={<InspectorPane wb={wb} />}
-        inspectorCollapsed={isCompact ? true : inspectorCollapsed}
-        onToggleInspector={() => {
-          if (isCompact) {
-            setDrawerOpen(true);
-          } else {
-            setInspectorOverride(inspectorCollapsed ? true : false);
-          }
-        }}
-      />
-      <Drawer open={isCompact && drawerOpen} title="方案检查器" onClose={() => setDrawerOpen(false)} width={360}>
-        <InspectorPane wb={wb} />
+    <div className={styles.mainCol}>
+      {isCompact && (
+        <div className={styles.chatHead}>
+          <Button variant="secondary" size="sm" onClick={() => setTaskDrawerOpen(true)}>
+            <ListTodo size={14} aria-hidden style={{ marginRight: 4, verticalAlign: -2 }} />
+            任务列表
+          </Button>
+          <DemoDataBadge kind="demo" />
+          <Button variant="secondary" size="sm" onClick={() => setContextDrawerOpen(true)}>
+            <PanelsTopLeft size={14} aria-hidden style={{ marginRight: 4, verticalAlign: -2 }} />
+            上下文信息
+          </Button>
+        </div>
+      )}
+
+      <div className={styles.agentGrid}>
+        <div className={styles.sideCol}>{taskPane}</div>
+        <div className={styles.mainCol}>
+          <AgentConversationPane wb={wb} event={selectedEvent} />
+        </div>
+        <div className={styles.sideCol}>{contextPane}</div>
+      </div>
+
+      <Drawer open={isCompact && taskDrawerOpen} title="任务列表" side="left" width={320} onClose={() => setTaskDrawerOpen(false)}>
+        <div className={styles.sideCol}>{taskPane}</div>
       </Drawer>
-    </>
+      <Drawer open={isCompact && contextDrawerOpen} title="上下文信息" width={360} onClose={() => setContextDrawerOpen(false)}>
+        <div className={styles.sideCol}>{contextPane}</div>
+      </Drawer>
+    </div>
   );
 }

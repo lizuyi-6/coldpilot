@@ -5,7 +5,7 @@ import { dailyCurve, todayKwh, yesterdayKwh } from '@/domain/energy';
 import { SkeletonLoader } from '@/components/ui/SkeletonLoader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ColdRoomOverviewPanel } from '@/features/commandCenter/ColdRoomOverviewPanel';
-import { AgentCenterPanel } from '@/features/commandCenter/AgentCenterPanel';
+import { AgentHomePanel } from '@/features/agentHome/AgentHomePanel';
 import { InventoryOverviewCard } from '@/features/commandCenter/InventoryOverviewCard';
 import { EnergyOverviewCard } from '@/features/commandCenter/EnergyOverviewCard';
 import { AlertsOverviewCard } from '@/features/commandCenter/AlertsOverviewCard';
@@ -59,10 +59,10 @@ export default function CommandCenterPage() {
 
   return (
     <div className={styles.page}>
-      {/* 第一行：冷库概览综合面板 + Agent 对话中心 */}
+      {/* 第一行：冷库概览综合面板 + Agent 自主控制中心 */}
       <div className={styles.rowTop}>
         <ColdRoomOverviewPanel room={room} telemetry={telemetry} devices={devices} inventory={inventory} overall={overall} />
-        <AgentCenterPanel event={activeEvent} />
+        <AgentHomePanel event={activeEvent} />
       </div>
 
       {/* 第二行：库存 / 能耗 / 当前告警 */}
