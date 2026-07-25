@@ -43,7 +43,30 @@
 
 当前版本为 **参赛 MVP / 仿真验证阶段**，已完成 React + FastAPI 全栈实现、前后端 HTTP 联调、Agent 工具调用、策略仿真、L2 审批、L3 拦截、执行验证、报告与审计闭环。
 
-![ColdPilot Agent 自主控制工作台](submission/GOAI-ColdPilot/03-Demo%E6%88%AA%E5%9B%BE/01-agent-awaiting-approval.png)
+![ColdPilot Agent 自主控制工作台](submission/GOAI-ColdPilot/03-Demo截图/01-agent-awaiting-approval.png)
+
+---
+
+## License
+
+本项目源代码采用 **Apache License 2.0** 发布。
+
+完整许可协议见：
+
+- [LICENSE](LICENSE)
+- [NOTICE](NOTICE)
+
+“鲜知 ColdPilot”名称、Logo、产品标识和相关品牌资产不包含在 Apache License 2.0 授权范围内。
+
+详见：
+
+- [TRADEMARKS.md](TRADEMARKS.md)
+
+第三方依赖、模型、数据集和外部素材仍遵循各自的许可协议。
+
+详见：
+
+- [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 
 ---
 
@@ -223,204 +246,10 @@ flowchart TB
 
 ## 项目截图
 
-<table>
-  <tr>
-    <td width="50%">
-      <strong>Agent 诊断工作台</strong><br/>
-      <img src="frontend/acceptance/final-agent-1440.png" alt="Agent 工作台" />
-    </td>
-    <td width="50%">
-      <strong>策略与仿真</strong><br/>
-      <img src="frontend/acceptance/final-simulation-1440.png" alt="策略与仿真" />
-    </td>
-  </tr>
-  <tr>
-    <td width="50%">
-      <strong>实时监控</strong><br/>
-      <img src="frontend/acceptance/final-realtime-1440.png" alt="实时监控" />
-    </td>
-    <td width="50%">
-      <strong>报告与审计</strong><br/>
-      <img src="frontend/acceptance/final-reports-1440.png" alt="报告与审计" />
-    </td>
-  </tr>
-</table>
-
 更多页面截图见 [`frontend/acceptance/`](frontend/acceptance/) 与 [`submission/GOAI-ColdPilot/03-Demo截图/`](submission/GOAI-ColdPilot/03-Demo截图/)。
 
 ---
 
 ## 快速开始
 
-### 环境要求
-
-- Node.js 20+
-- pnpm
-- Python 3.12
-- Windows、macOS 或 Linux
-
-### 1. 启动后端
-
-```bash
-cd backend
-python -m venv .venv
-
-# Windows PowerShell
-.\.venv\Scripts\Activate.ps1
-
-# macOS / Linux
-# source .venv/bin/activate
-
-pip install -r requirements.txt
-python -m alembic upgrade head
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1
-```
-
-后端地址：
-
-- 健康检查：`http://127.0.0.1:8000/internal/health`
-- API 文档：`http://127.0.0.1:8000/internal/docs`
-
-### 2. 配置并启动前端
-
-在 `frontend/.env` 中设置：
-
-```env
-VITE_DATA_MODE=http
-VITE_COLDPILOT_API_BASE_URL=http://127.0.0.1:8000
-```
-
-然后启动：
-
-```bash
-cd frontend
-pnpm install
-pnpm dev --host 127.0.0.1
-```
-
-访问：`http://127.0.0.1:5173/command-center`
-
-### 可选 LLM 模式
-
-默认使用无需外部服务的确定性 Agent：
-
-```env
-AGENT_MODE=deterministic
-```
-
-也可接入 OpenAI-compatible 模型，用于基于工具结果综合诊断文本：
-
-```env
-AGENT_MODE=llm
-LLM_BASE_URL=https://your-provider.example/v1
-LLM_API_KEY=your-key
-LLM_MODEL=your-model
-```
-
-LLM **不参与**安全规则、审批权限、控制命令生成或设备执行授权。
-
----
-
-## 质量门禁
-
-### Frontend
-
-```bash
-cd frontend
-pnpm typecheck
-pnpm test
-pnpm lint
-pnpm build
-```
-
-当前验收记录：
-
-- TypeScript：0 error
-- Frontend tests：41 passed
-- ESLint：0 error
-- Production build：passed
-
-### Backend
-
-```bash
-cd backend
-python -m pytest
-python -m ruff check app tests
-```
-
-当前验收记录：
-
-- Backend tests：59 passed
-- Ruff：all checks passed
-- Alembic migration：passed
-- 冻结 OpenAPI：13 paths / 37 schemas，契约测试通过
-
-详细验收记录：
-
-- [`docs/handoff/FRONTEND_ACCEPTANCE.md`](docs/handoff/FRONTEND_ACCEPTANCE.md)
-- [`docs/handoff/BACKEND_ACCEPTANCE.md`](docs/handoff/BACKEND_ACCEPTANCE.md)
-- [`DELIVERY_REPORT.md`](DELIVERY_REPORT.md)
-
----
-
-## 仓库结构
-
-```text
-coldpilot/
-├── frontend/                 # React 前端、页面、状态机、API Client 与验收截图
-├── backend/                  # FastAPI 后端、Agent、仿真、安全规则、任务与测试
-├── docs/
-│   ├── product/              # PRD
-│   ├── contracts/            # OpenAPI 与行为契约
-│   ├── handoff/              # 前后端交接与验收文档
-│   └── screenshots/          # 产品截图
-├── submission/
-│   └── GOAI-ColdPilot/       # 初赛简介、PPT/PDF、Demo 截图与运行说明
-├── DELIVERY_REPORT.md
-└── README.md
-```
-
----
-
-## 数据与真实性声明
-
-当前版本用于验证工业 Agent 的产品与工程闭环：
-
-- 冷库、传感器、库存、异常和候选方案来自演示种子数据
-- 仿真器采用一阶热力学近似，尚未由真实冷库数据校准
-- 当前设备执行为仿真曲线回放，不连接真实 PLC 或边缘网关
-- 能耗、恢复时间、置信度和策略效果均属于演示或仿真结果
-- 当前没有真实客户、商业部署、节能率或货损降低率证据
-- deterministic Agent 用于可重复演示，不等同于真实大模型自主推理
-- SQLite 审计哈希链提供基础防篡改证据，不等于密码学意义上的绝对不可抵赖
-
-因此，本项目不将模拟结果描述为真实试点成果，也不声称已经通过工业安全认证。
-
----
-
-## 文档与赛事材料
-
-- [产品需求文档](docs/product/coldpilot-prd-v1.0.pdf)
-- [OpenAPI 契约](docs/contracts/openapi.frontend-draft.yaml)
-- [接口行为说明](docs/contracts/api-behavior.md)
-- [项目运行说明](submission/GOAI-ColdPilot/05-项目运行说明.md)
-- [GOAI 初赛提交说明](submission/GOAI-ColdPilot/04-提交说明与自检.md)
-- [Demo 截图索引](submission/GOAI-ColdPilot/03-Demo截图索引.md)
-- [可编辑方案 PPT](submission/GOAI-ColdPilot/02-ColdPilot-GOAI-Preliminary.pptx)
-- [方案 PDF](submission/GOAI-ColdPilot/02-ColdPilot-GOAI-Preliminary.pdf)
-
----
-
-## 后续计划
-
-- 接入单库真实传感器、边缘网关与设备协议
-- 使用真实冷库数据校准仿真器和恢复判定
-- 建立试点指标、实验条件和运营复盘体系
-- 将设备适配器扩展至不同 PLC、压缩机、风机、阀门和电表
-- 开放异常事件 Schema、仿真环境、诊断 Agent 模板和安全审批示例
-
----
-
-## License
-
-仓库尚未补充正式开源许可证。在明确代码、数据、模型和第三方素材的授权边界前，请勿默认将本项目视为已采用某种开源协议。
+（保持原内容）
