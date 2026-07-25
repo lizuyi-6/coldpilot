@@ -43,7 +43,7 @@
 
 当前版本为 **参赛 MVP / 仿真验证阶段**，已完成 React + FastAPI 全栈实现、前后端 HTTP 联调、Agent 工具调用、策略仿真、L2 审批、L3 拦截、执行验证、报告与审计闭环。
 
-![ColdPilot 指挥中心](frontend/acceptance/final-command-center-1440.png)
+![ColdPilot Agent 自主控制工作台](submission/GOAI-ColdPilot/03-Demo%E6%88%AA%E5%9B%BE/01-agent-awaiting-approval.png)
 
 ---
 
