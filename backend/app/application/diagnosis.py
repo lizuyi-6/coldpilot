@@ -32,6 +32,7 @@ from app.infrastructure.db.models import (
     ToolInvocation,
 )
 from app.infrastructure.logging import get_logger
+from app.infrastructure.operation_locks import acquire_operation_lock
 from app.infrastructure.tasks.worker import TaskHandler
 from app.ports.tools import ToolResult
 
@@ -95,6 +96,12 @@ async def _build_context(session: AsyncSession, event: AnomalyEvent) -> AgentCon
 
 
 async def start_diagnosis(session: AsyncSession, event_id: str) -> AgentTaskSchema:
+    operation_key = f"diagnosis:event:{event_id}"
+    async with acquire_operation_lock(operation_key):
+        return await _start_diagnosis_locked(session, event_id)
+
+
+async def _start_diagnosis_locked(session: AsyncSession, event_id: str) -> AgentTaskSchema:
     event = await session.get(AnomalyEvent, event_id)
     if event is None:
         raise not_found(f"未找到异常事件 {event_id}")
@@ -107,6 +114,7 @@ async def start_diagnosis(session: AsyncSession, event_id: str) -> AgentTaskSche
             .order_by(AgentTask.created_at.desc())
         )
     ).scalars().first()
+
     if existing is not None:
         await session.refresh(existing, attribute_names=["tool_invocations"])
         return mappers.map_agent_task(existing)

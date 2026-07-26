@@ -33,6 +33,7 @@ from app.infrastructure.db.models import (
     SimulationResult,
 )
 from app.infrastructure.logging import get_logger
+from app.infrastructure.operation_locks import acquire_operation_lock
 
 log = get_logger(__name__)
 
@@ -42,6 +43,15 @@ def _checks_to_json(checks) -> list[dict]:  # noqa: ANN001
 
 
 async def request_approval(session: AsyncSession, plan_id: str) -> ApprovalRequestSchema:
+    operation_key = f"plan-workflow:{plan_id}"
+    async with acquire_operation_lock(operation_key):
+        return await _request_approval_locked(session, plan_id)
+
+
+async def _request_approval_locked(
+    session: AsyncSession,
+    plan_id: str,
+) -> ApprovalRequestSchema:
     plan = await session.get(ControlPlan, plan_id)
     if plan is None:
         raise not_found(f"未找到方案 {plan_id}")
@@ -124,6 +134,17 @@ async def request_approval(session: AsyncSession, plan_id: str) -> ApprovalReque
 async def submit_approval(
     session: AsyncSession, request_id: str, decision: str, reason: str | None
 ) -> ApprovalResultSchema:
+    operation_key = f"approval-decision:{request_id}"
+    async with acquire_operation_lock(operation_key):
+        return await _submit_approval_locked(session, request_id, decision, reason)
+
+
+async def _submit_approval_locked(
+    session: AsyncSession,
+    request_id: str,
+    decision: str,
+    reason: str | None,
+) -> ApprovalResultSchema:
     request = await session.get(ApprovalRequest, request_id)
     if request is None:
         raise not_found(f"未找到审批请求 {request_id}")
@@ -159,7 +180,6 @@ async def submit_approval(
         if not can_transition(event.stage, "rejected"):
             raise invalid_state(f"当前阶段 {event.stage} 不允许驳回", current_stage=event.stage)
         event.stage = "rejected"
-
     await session.commit()
     log.info("approval.decided", request_id=request_id, decision=decision, actor=actor.actor_id)
     return mappers.map_approval_result(request)

@@ -29,6 +29,7 @@ from app.infrastructure.db.models import (
     TelemetrySeries,
 )
 from app.infrastructure.logging import get_logger
+from app.infrastructure.operation_locks import acquire_operation_lock
 from app.infrastructure.simulator.thermal import DEFAULT_START_TEMP, parse_rate, simulate
 
 log = get_logger(__name__)
@@ -52,6 +53,15 @@ async def _latest_temperature(session: AsyncSession, room_id: str) -> float:
 
 
 async def run_simulation(session: AsyncSession, plan_id: str) -> SimulationResultSchema:
+    operation_key = f"plan-workflow:{plan_id}"
+    async with acquire_operation_lock(operation_key):
+        return await _run_simulation_locked(session, plan_id)
+
+
+async def _run_simulation_locked(
+    session: AsyncSession,
+    plan_id: str,
+) -> SimulationResultSchema:
     plan = await session.get(ControlPlan, plan_id)
     if plan is None:
         raise not_found(f"未找到方案 {plan_id}")

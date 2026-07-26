@@ -34,6 +34,7 @@ from app.infrastructure.db.models import (
     SimulationResult,
 )
 from app.infrastructure.logging import get_logger
+from app.infrastructure.operation_locks import acquire_operation_lock
 from app.infrastructure.tasks.worker import TaskHandler
 
 log = get_logger(__name__)
@@ -61,6 +62,15 @@ async def _full_curve(session: AsyncSession, plan_id: str, plan_version: int) ->
 
 
 async def start_execution(session: AsyncSession, plan_id: str) -> ExecutionTaskSchema:
+    operation_key = f"plan-workflow:{plan_id}"
+    async with acquire_operation_lock(operation_key):
+        return await _start_execution_locked(session, plan_id)
+
+
+async def _start_execution_locked(
+    session: AsyncSession,
+    plan_id: str,
+) -> ExecutionTaskSchema:
     plan = await session.get(ControlPlan, plan_id)
     if plan is None:
         raise not_found(f"未找到方案 {plan_id}")
